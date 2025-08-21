@@ -11,6 +11,9 @@
     :root { --bg:#0b1220; --muted:#9ca3af; --card:rgba(255,255,255,0.02); --border:rgba(148,163,184,0.08); }
     html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8;font-family:'Poppins',system-ui,Segoe UI,Roboto; overflow: hidden;}
     
+    body.shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
     .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:16px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
 
@@ -43,9 +46,31 @@
 
     .shimmer-tag { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: linear-gradient(270deg, #ff2d2d, #ff7b7b, #ff2d2d); background-size: 200% 200%; animation: shimmer 2s ease infinite; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* Custom Checkbox Styles */
+    .toggle-label { display: flex; align-items: center; justify-content: space-between; cursor: pointer; width: 100%; }
+    .toggle-label input { display: none; }
+    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; background-color: rgba(255,255,255,0.1); border-radius: 22px; transition: background-color 0.2s; }
+    .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.2s; }
+    .toggle-label input:checked + .toggle-switch { background-color: #4f46e5; }
+    .toggle-label input:checked + .toggle-switch::after { transform: translateX(18px); }
+
+    /* Animations */
+    .targeted-card { border: 2px solid #ef4444 !important; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+    #phase-transition-overlay { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; font-size: 8rem; color: white; pointer-events: none; opacity: 0; transition: opacity 0.5s ease-in-out; }
+    #phase-transition-overlay.day { background: radial-gradient(circle, rgba(251,191,36,0.8) 0%, rgba(251,191,36,0) 70%); }
+    #phase-transition-overlay.night { background: radial-gradient(circle, rgba(79,70,229,0.6) 0%, rgba(79,70,229,0) 70%); }
+    #phase-transition-overlay.visible { opacity: 1; }
   </style>
 </head>
 <body>
+  <!-- New Animation Overlay -->
+  <div id="phase-transition-overlay">
+    <div id="phase-icon"></div>
+  </div>
+
   <!-- Notification Toast -->
   <div id="notification-toast"></div>
 
@@ -125,19 +150,28 @@
           </div>
           <!-- Room Settings (Host only) -->
           <div id="room-settings-panel" style="width:360px">
-            <div class="card" style="padding:12px">
-              <h3 style="margin:0 0 8px 0">Room Settings</h3>
-              <label class="muted" style="font-size:13px">Werewolves</label>
-              <input id="setting-wolves" type="number" min="1" value="1" class="input-field setting-input" style="margin-bottom:8px"/>
-              <div style="display:flex;gap:8px; flex-wrap: wrap;">
-                <label class="muted" style="flex:1 0 45%"><input id="setting-seer" type="checkbox" checked class="setting-input"/> Seer</label>
-                <label class="muted" style="flex:1 0 45%"><input id="setting-doctor" type="checkbox" checked class="setting-input"/> Doctor</label>
-                <label class="muted" style="flex:1 0 45%"><input id="setting-hunter" type="checkbox" class="setting-input"/> Hunter</label>
-              </div>
-              <div style="height:8px"></div>
-              <div style="display:flex;gap:8px">
-                <label class="muted" style="flex:1">Day (s)<input id="setting-day" type="number" value="60" class="input-field setting-input" style="margin-top:6px"/></label>
-                <label class="muted" style="flex:1">Night (s)<input id="setting-night" type="number" value="45" class="input-field setting-input" style="margin-top:6px"/></label>
+            <div class="card" style="padding:16px">
+              <h3 style="margin:0 0 12px 0">Room Settings</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="muted text-sm">Werewolves</label>
+                  <input id="setting-wolves" type="number" min="1" value="1" class="input-field setting-input w-full mt-1"/>
+                </div>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <label class="toggle-label muted">Seer <input id="setting-seer" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted">Doctor <input id="setting-doctor" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted">Hunter <input id="setting-hunter" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label class="muted text-sm">Day (s)</label>
+                    <input id="setting-day" type="number" value="60" class="input-field setting-input w-full mt-1"/>
+                  </div>
+                  <div>
+                    <label class="muted text-sm">Night (s)</label>
+                    <input id="setting-night" type="number" value="45" class="input-field setting-input w-full mt-1"/>
+                  </div>
+                </div>
               </div>
             </div>
              <button id="btn-start" class="btn btn-primary hidden" style="width:100%; margin-top:12px;">Start Game</button>
@@ -203,12 +237,21 @@
       <button id="btn-close-role-reveal" class="btn btn-primary" style="width:100%; margin-top:24px;">Continue</button>
     </div>
   </div>
+  
+  <!-- Seer Result Modal -->
+  <div id="seer-result-modal" class="modal-backdrop">
+    <div class="modal card" style="text-align:center;">
+        <h1 id="seer-result-title" style="font-size:28px; margin:0;">Seer's Vision</h1>
+        <p id="seer-result-body" class="muted" style="margin-top:16px;"></p>
+        <button onclick="showModal('seer-result-modal', false)" class="btn btn-primary w-full mt-4">Close</button>
+    </div>
+  </div>
 
   <!-- Event Announcement Modal -->
   <div id="event-modal" class="modal-backdrop">
     <div class="modal card" style="text-align:center;">
         <h1 id="event-title" style="font-size:28px; margin:0;"></h1>
-        <div id="event-body" class="muted" style="margin-top:16px;"></div>
+        <div id="event-body" class="muted" style="margin-top:16px; text-align:left;"></div>
     </div>
   </div>
 
@@ -233,7 +276,7 @@
             <div><strong>👱 Villager</strong><p class="muted" style="font-size:14px;">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
             <div><strong>👁️ Seer</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
             <div><strong>🧑‍⚕️ Doctor</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
-            <div><strong>🎯 Hunter</strong><p class="muted" style="font-size:14px;">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
+            <div><strong>👮 Hunter</strong><p class="muted" style="font-size:14px;">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
         </div>
         <div style="text-align:right; margin-top:20px;">
             <button id="btn-close-rules" class="btn btn-primary">Got it!</button>
@@ -259,7 +302,7 @@
       t.classList.add('show');
       setTimeout(()=> t.classList.remove('show'), 3000);
     }
-    function showModal(id, show) {
+    window.showModal = (id, show) => { // Make it global for inline onclick
         document.getElementById(id)?.classList.toggle('active', show);
     }
 
@@ -368,6 +411,7 @@
     let chatUnsub = null;
     let gameTimerInterval = null;
     let presenceInterval = null;
+    let localGameState = {};
 
     function setLobbyView(inRoom) {
         document.getElementById('pre-room-view').classList.toggle('hidden', inRoom);
@@ -470,7 +514,13 @@
         }
         const roomData = snap.data();
         
-        if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby') {
+        if (localGameState.phase !== roomData.phase && (roomData.phase === 'day' || roomData.phase === 'night')) {
+            playPhaseTransition(roomData.phase);
+        }
+        
+        localGameState = roomData;
+        
+        if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby' && !roomData.processing) {
             hostGameLogic(roomData);
         }
 
@@ -682,28 +732,33 @@
         if (state === 'role_reveal') {
             const allReady = Object.values(players).every(p => p.ready);
             if (allReady) {
+                await updateDoc(roomRef, { processing: true });
                 const endTime = Timestamp.fromMillis(Date.now() + roomData.settings.nightDuration * 1000);
-                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
+                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime, processing: false });
             }
             return;
         }
 
-        if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
-            setLoading(true);
+        if ((state === 'night' || state === 'day' || state === 'announcement') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
+            await updateDoc(roomRef, { processing: true });
             let nextState = {};
-            if (state === 'night') {
+            
+            if (state === 'announcement') {
+                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+                nextState = { state: roomData.phase, phaseEndTime: endTime, announcement: null };
+            } else if (state === 'night') {
                 nextState = processNightActions(roomData);
-            } else {
+            } else { // day
                 nextState = processDayVotes(roomData);
             }
             
             const winState = checkWinCondition(nextState.players || players);
             if (winState) {
-                await updateDoc(roomRef, { state: 'game_over', gameOver: winState });
+                await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
             } else {
-                await updateDoc(roomRef, nextState);
+                await updateDoc(roomRef, { ...nextState, processing: false });
             }
-            setLoading(false);
         }
     }
     
@@ -744,7 +799,7 @@
         if (deaths.size > 0) {
             deaths.forEach(pid => {
                 players[pid].isAlive = false;
-                events.push(`${players[pid].nickname} was found dead.`);
+                events.push(`**${players[pid].nickname}** was found dead.`);
             });
         } else {
             events.push("The night was quiet... No one died.");
@@ -754,7 +809,8 @@
             state: 'announcement',
             phase: 'day',
             players: players,
-            announcement: { title: `Night ${turn} ended`, events: events },
+            announcement: { title: `Night ${turn} ended`, events: events, deaths: deaths.size > 0 },
+            phaseEndTime: Timestamp.fromMillis(Date.now() + 5000)
         };
     }
 
@@ -762,10 +818,14 @@
         let { players, turn } = roomData;
         let events = [];
         const votes = {};
+        const voteDetails = {};
 
-        Object.values(players).forEach(p => {
+        Object.entries(players).forEach(([voterId, p]) => {
             if (p.isAlive && p.votedFor) {
-                votes[p.votedFor] = (votes[p.votedFor] || 0) + 1;
+                const targetId = p.votedFor;
+                votes[targetId] = (votes[targetId] || 0) + 1;
+                if (!voteDetails[targetId]) voteDetails[targetId] = [];
+                voteDetails[targetId].push(p.nickname);
             }
         });
 
@@ -785,10 +845,19 @@
         }
 
         if (isTie) eliminatedPlayerId = null;
+        
+        events.push("The votes are in:");
+        Object.entries(players).forEach(([pid, p]) => {
+            if (p.isAlive) {
+                const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
+                events.push(`**${p.nickname}**: ${votes[pid] || 0} votes ${voterList}`);
+            }
+        });
+        events.push("<hr class='my-2 border-gray-700'>");
 
         if (eliminatedPlayerId) {
             players[eliminatedPlayerId].isAlive = false;
-            events.push(`${players[eliminatedPlayerId].nickname} was eliminated by popular vote. Their role was ${players[eliminatedPlayerId].role}.`);
+            events.push(`**${players[eliminatedPlayerId].nickname}** was eliminated. Their role was **${players[eliminatedPlayerId].role}**.`);
         } else {
             events.push("The vote was tied. No one was eliminated.");
         }
@@ -803,7 +872,8 @@
             phase: 'night',
             turn: turn + 1,
             players: players,
-            announcement: { title: `Day ${turn} ended`, events: events },
+            announcement: { title: `Day ${turn} ended`, events: events, deaths: !!eliminatedPlayerId },
+            phaseEndTime: Timestamp.fromMillis(Date.now() + 8000) // Longer for reading votes
         };
     }
 
@@ -865,7 +935,8 @@
                     turn: 1,
                     phase: 'night',
                     events: [],
-                    announcement: null
+                    announcement: null,
+                    processing: false,
                 });
             });
         } catch (e) {
@@ -905,27 +976,29 @@
         }
 
         showModal('role-reveal-modal', true);
+        setTimeout(async () => {
+            if (document.getElementById('role-reveal-modal').classList.contains('active')) {
+                showModal('role-reveal-modal', false);
+                const roomRef = doc(db, 'rooms', currentRoomId);
+                await updateDoc(roomRef, { [`players.${currentUser.uid}.ready`]: true });
+            }
+        }, 5000);
     }
 
     function renderAnnouncement(roomData) {
-        const { title, events } = roomData.announcement;
+        const { title, events, deaths } = roomData.announcement;
         document.getElementById('event-title').textContent = title;
         document.getElementById('event-body').innerHTML = events.map(e => `<p>${e}</p>`).join('');
         showModal('event-modal', true);
 
+        if (deaths) {
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+        }
+
         setTimeout(async () => {
             showModal('event-modal', false);
-            if (roomData.hostId === currentUser.uid) {
-                const roomRef = doc(db, 'rooms', currentRoomId);
-                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
-                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-                await updateDoc(roomRef, {
-                    state: roomData.phase,
-                    phaseEndTime: endTime,
-                    announcement: null
-                });
-            }
-        }, 4500);
+        }, roomData.phaseEndTime.toMillis() - Date.now() - 500);
     }
     
     function renderGamePhase(roomData) {
@@ -941,10 +1014,10 @@
 
         const chatInput = document.getElementById('chat-input');
         const chatSend = document.getElementById('chat-send');
-        const canChat = !isNight && myData.isAlive;
+        const canChat = !isNight && (myData.isAlive || currentUser.isDeveloper);
         chatInput.disabled = !canChat;
         chatSend.disabled = !canChat;
-        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled.';
+        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled for the dead.';
     }
     
     function renderPlayerCards(roomData) {
@@ -958,41 +1031,52 @@
 
         Object.entries(roomData.players).forEach(([pid, p]) => {
             const card = document.createElement('div');
-            card.className = 'p-4 rounded-lg flex flex-col items-center justify-center text-center';
+            card.className = 'p-4 rounded-lg flex flex-col items-center justify-between text-center';
             card.style.background = 'rgba(255,255,255,0.02)';
-            card.style.border = '1px solid var(--border)';
+            card.style.border = '2px solid transparent';
+            card.style.aspectRatio = '1 / 1';
 
             const isMe = pid === currentUser.uid;
             const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
 
-            let statusHTML = p.isAlive ? `<div class="text-2xl">🙂</div>` : `<div class="text-2xl">👻</div>`;
+            let statusHTML = p.isAlive ? `<div class="text-4xl">🙂</div>` : `<div class="text-4xl">👻</div>`;
             
             card.innerHTML = `
-                ${statusHTML}
-                <strong class="mt-2">${displayName}</strong>
-                ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
+                <div>
+                    ${statusHTML}
+                    <strong class="mt-2">${displayName}</strong>
+                    ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
+                </div>
                 <div class="flex gap-2 mt-3"></div>
             `;
             
             const actionsContainer = card.querySelector('.flex');
             const hasActed = !!myData.actionTarget;
-            const canAct = myData.isAlive && p.isAlive && !isMe;
+            const canAct = (myData.isAlive || currentUser.isDeveloper) && p.isAlive && !isMe;
+            
+            const iconSVG = {
+                kill: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8m-1.99-2.442a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L2.01 6.265a.5.5 0 0 1 0-.707m11.98 0a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L13.28 6.265a.5.5 0 0 1 0-.707M6 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/></svg>`,
+                seer: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/></svg>`,
+                doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7.354 1.646a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L9 3.707V6.5a.5.5 0 0 1-1 0V3.707L7.354 3.053a.5.5 0 1 1-.708-.708z"/><path d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8m15 0A8 8 0 1 0 0 8a8 8 0 0 0 16 0M4.5 7.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z"/></svg>`,
+                hunter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H2a2 2 0 0 1-2-2v-2H0V9a2 2 0 0 1 2-2h2V5a2 2 0 0 1 2-2h2V1a2 2 0 0 1 2-2z"/></svg>`,
+                revive: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`
+            };
             
             if (roomData.phase === 'night') {
                 if (currentUser.isDeveloper) {
                     if(p.isAlive && !isMe) {
-                        actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">💀</button>`;
-                        actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">👁️</button>`;
-                        actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">🛡️</button>`;
+                        actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">${iconSVG.kill}</button>`;
+                        actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">${iconSVG.seer}</button>`;
+                        actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">${iconSVG.doctor}</button>`;
                     } else if (!p.isAlive) {
-                        actionsContainer.innerHTML += `<button title="Revive" class="btn btn-secondary p-2" onclick="dev_togglePlayerAlive('${pid}', true)">➕</button>`;
+                        actionsContainer.innerHTML += `<button title="Revive" class="btn btn-secondary p-2" onclick="dev_togglePlayerAlive('${pid}', true)">${iconSVG.revive}</button>`;
                     }
                 } 
                 else if (canAct && !hasActed) {
-                    if (myData.role === 'werewolf') actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">💀</button>`;
-                    if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">👁️</button>`;
-                    if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">🛡️</button>`;
-                    if (myData.role === 'hunter' && !myData.hasUsedAbility) actionsContainer.innerHTML += `<button title="Shoot" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'hunter')">🎯</button>`;
+                    if (myData.role === 'werewolf') actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">${iconSVG.kill}</button>`;
+                    if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">${iconSVG.seer}</button>`;
+                    if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">${iconSVG.doctor}</button>`;
+                    if (myData.role === 'hunter' && !myData.hasUsedAbility) actionsContainer.innerHTML += `<button title="Shoot" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'hunter')">${iconSVG.hunter}</button>`;
                 }
             } else {
                 if (myData.isAlive && p.isAlive && !isMe && !myData.votedFor) {
@@ -1002,7 +1086,7 @@
             
             if (!p.isAlive) card.style.opacity = '0.5';
             if (myData.actionTarget === pid || (typeof myData.actionTarget === 'object' && myData.actionTarget?.target === pid) || myData.votedFor === pid) {
-                 card.style.boxShadow = '0 0 15px #7c3aed';
+                card.classList.add('targeted-card');
             }
 
             mainContent.appendChild(card);
@@ -1027,10 +1111,10 @@
             let statusIndicator = isAlive ? '🟢' : '👻';
             let roleIndicator = '';
             
-            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '🎯', villager:'👱'};
-            if (myData.role === 'werewolf' && p.role === 'werewolf') roleIndicator = roleEmojis.werewolf;
-            if (isMe) roleIndicator = roleEmojis[p.role];
-            if (currentUser.isDeveloper) roleIndicator = roleEmojis[p.role];
+            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
+            if ((myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf') || (isMe) || (currentUser.isDeveloper)) {
+                roleIndicator = roleEmojis[p.role];
+            }
 
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
             if (isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
@@ -1055,7 +1139,7 @@
         rolesList.innerHTML = '<h4>Final Roles:</h4>';
         Object.values(players).forEach(p => {
             const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
-            const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'🎯', villager:'👱'}[p.role] || '❓';
+            const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
             rolesList.innerHTML += `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
         });
         
@@ -1063,6 +1147,13 @@
     }
 
     async function performNightAction(targetId, actionType) {
+        const myData = localGameState.players[currentUser.uid];
+        if (myData.role === 'seer' || (currentUser.isDeveloper && actionType === 'seer')) {
+            const targetPlayer = localGameState.players[targetId];
+            document.getElementById('seer-result-body').textContent = `${targetPlayer.nickname} is a ${targetPlayer.role}.`;
+            showModal('seer-result-modal', true);
+        }
+
         showToast('Action registered.');
         const roomRef = doc(db, 'rooms', currentRoomId);
         const action = currentUser.isDeveloper ? { target: targetId, type: actionType } : targetId;
@@ -1123,6 +1214,24 @@
         }, 1000);
     }
 
+    function playPhaseTransition(phase) {
+        const overlay = document.getElementById('phase-transition-overlay');
+        const icon = document.getElementById('phase-icon');
+        
+        if (phase === 'day') {
+            overlay.className = 'day';
+            icon.textContent = '☀️';
+        } else {
+            overlay.className = 'night';
+            icon.textContent = '🌙';
+        }
+
+        overlay.classList.add('visible');
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+        }, 2000);
+    }
+
     // Make functions globally accessible for onclick attributes
     window.performNightAction = performNightAction;
     window.voteForPlayer = voteForPlayer;
@@ -1164,8 +1273,8 @@
     });
 
     const rulesModal = document.getElementById('rules-modal-backdrop');
-    document.getElementById('btn-how-to-play').addEventListener('click', () => rulesModal.classList.add('active'));
-    document.getElementById('btn-close-rules').addEventListener('click', () => rulesModal.classList.remove('active'));
+    document.getElementById('btn-how-to-play').addEventListener('click', () => showModal('rules-modal-backdrop', true));
+    document.getElementById('btn-close-rules').addEventListener('click', () => showModal('rules-modal-backdrop', false));
 
     // ---------- Initialization ----------
     (function init(){

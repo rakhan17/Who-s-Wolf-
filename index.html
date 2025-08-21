@@ -47,7 +47,6 @@
     .shimmer-tag { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: linear-gradient(270deg, #ff2d2d, #ff7b7b, #ff2d2d); background-size: 200% 200%; animation: shimmer 2s ease infinite; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-    /* Custom Checkbox Styles */
     .toggle-label { display: flex; align-items: center; justify-content: space-between; cursor: pointer; width: 100%; }
     .toggle-label input { display: none; }
     .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; background-color: rgba(255,255,255,0.1); border-radius: 22px; transition: background-color 0.2s; }
@@ -55,26 +54,24 @@
     .toggle-label input:checked + .toggle-switch { background-color: #4f46e5; }
     .toggle-label input:checked + .toggle-switch::after { transform: translateX(18px); }
 
-    /* Animations */
     .targeted-card { border: 2px solid #ef4444 !important; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-    #phase-transition-overlay { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; font-size: 8rem; color: white; pointer-events: none; opacity: 0; transition: opacity 0.5s ease-in-out; }
+    #phase-transition-overlay { position: fixed; inset: 0; z-index: 999; display: flex; flex-direction:column; align-items: center; justify-content: center; font-size: 8rem; color: white; pointer-events: none; opacity: 0; transition: opacity 0.5s ease-in-out; }
     #phase-transition-overlay.day { background: radial-gradient(circle, rgba(251,191,36,0.8) 0%, rgba(251,191,36,0) 70%); }
     #phase-transition-overlay.night { background: radial-gradient(circle, rgba(79,70,229,0.6) 0%, rgba(79,70,229,0) 70%); }
     #phase-transition-overlay.visible { opacity: 1; }
+    #phase-title { font-size: 2rem; font-weight: bold; margin-top: -2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
-  <!-- New Animation Overlay -->
   <div id="phase-transition-overlay">
     <div id="phase-icon"></div>
+    <div id="phase-title"></div>
   </div>
 
-  <!-- Notification Toast -->
   <div id="notification-toast"></div>
 
-  <!-- Loading overlay -->
   <div id="loading-overlay" class="screen active" style="background:linear-gradient(180deg, rgba(2,6,23,0.8), rgba(2,6,23,0.95));z-index:40">
     <div style="text-align:center">
       <div style="font-size:56px">🐺</div>
@@ -84,7 +81,6 @@
     </div>
   </div>
 
-  <!-- NICKNAME screen -->
   <div id="nickname-screen" class="screen" style="z-index:10">
     <div class="card" style="width:100%;max-width:420px;text-align:center">
       <div style="font-size:56px">🐺</div>
@@ -97,10 +93,8 @@
     </div>
   </div>
 
-  <!-- LOBBY screen -->
   <div id="lobby-screen" class="screen" style="z-index:15">
     <div class="card" style="width:100%;max-width:900px">
-      <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
         <div style="display:flex; align-items:center; gap:12px;">
             <div style="font-size:32px">🐺</div>
@@ -118,7 +112,6 @@
         </div>
       </div>
 
-      <!-- Pre-Room View -->
       <div id="pre-room-view" style="margin-top:24px; display:flex; flex-direction:column; align-items:center; gap: 24px;">
         <div style="text-align:center; width:100%; max-width:320px;">
           <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Create a New Room</h3>
@@ -136,19 +129,16 @@
         </div>
       </div>
 
-      <!-- In-Room View -->
       <div id="in-room-view" class="hidden" style="margin-top:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <h3 style="margin:0">Room Code: <span id="room-code-display" style="color:#7c3aed; font-weight:700; cursor:pointer;"></span></h3>
             <button id="btn-leave" class="btn btn-secondary">Leave Room</button>
         </div>
         <div style="display:flex;gap:16px">
-          <!-- Player List -->
           <div style="flex:1">
             <h4 style="margin:0 0 8px 0">Players (<span id="player-count">0</span>)</h4>
             <div id="player-list" style="min-height:220px;max-height:220px;overflow:auto;border-radius:10px;padding:8px;background:rgba(255,255,255,0.01)"></div>
           </div>
-          <!-- Room Settings (Host only) -->
           <div id="room-settings-panel" style="width:360px">
             <div class="card" style="padding:16px">
               <h3 style="margin:0 0 12px 0">Room Settings</h3>
@@ -181,9 +171,7 @@
     </div>
   </div>
 
-  <!-- GAME screen -->
   <div id="game-screen" class="screen" style="z-index:20; display:flex; flex-direction:column; gap:16px; padding:16px;">
-    <!-- Game Header -->
     <div class="card" style="width:100%; padding:12px 24px; display:flex; justify-content:space-between; align-items:center;">
       <div>
         <h2 id="game-phase-title" style="margin:0; font-size:22px;">Night 1</h2>
@@ -195,9 +183,7 @@
       </div>
     </div>
 
-    <!-- Main Game Area -->
     <div style="width:100%; flex:1; display:flex; gap:16px; overflow:hidden;">
-      <!-- Left Panel (Players & Dev Tools) -->
       <div style="display:flex; flex-direction:column; gap:16px; width:280px;">
         <div class="card" style="padding:16px; flex:1; display:flex; flex-direction:column;">
           <h3 style="margin:0 0 8px 0;">Players</h3>
@@ -210,12 +196,9 @@
         </div>
       </div>
 
-      <!-- Center Panel (Main content) -->
       <div id="game-main-content" class="card" style="padding:16px; flex:1; overflow-y: auto;">
-        <!-- Player cards will be dynamically inserted here -->
       </div>
 
-      <!-- Right Panel (Chat) -->
       <div class="card" style="padding:16px; width:320px; display:flex; flex-direction:column;">
         <h3 style="margin:0 0 8px 0;">Global Chat</h3>
         <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:8px; font-size:14px;"></div>
@@ -227,18 +210,15 @@
     </div>
   </div>
 
-  <!-- Role Reveal Modal -->
-  <div id="role-reveal-modal" class="modal-backdrop">
-    <div class="modal card" style="text-align:center;">
-      <div id="role-reveal-emoji" style="font-size:80px; margin-bottom:12px;"></div>
-      <h1 id="role-reveal-name" style="font-size:28px; margin:0;"></h1>
-      <p id="role-reveal-description" class="muted" style="margin-top:8px;"></p>
-      <div id="role-reveal-allies" class="mt-4"></div>
-      <button id="btn-close-role-reveal" class="btn btn-primary" style="width:100%; margin-top:24px;">Continue</button>
-    </div>
+  <div id="role-reveal-overlay" class="screen" style="z-index: 25; background: rgba(11, 18, 32, 0.9); text-align: center; color: white;">
+      <div class="card" style="text-align:center;">
+        <div id="role-reveal-emoji" style="font-size:80px; margin-bottom:12px;"></div>
+        <h1 id="role-reveal-name" style="font-size:28px; margin:0;"></h1>
+        <p id="role-reveal-description" class="muted" style="margin-top:8px;"></p>
+        <div id="role-reveal-allies" class="mt-4"></div>
+      </div>
   </div>
   
-  <!-- Seer Result Modal -->
   <div id="seer-result-modal" class="modal-backdrop">
     <div class="modal card" style="text-align:center;">
         <h1 id="seer-result-title" style="font-size:28px; margin:0;">Seer's Vision</h1>
@@ -247,25 +227,14 @@
     </div>
   </div>
 
-  <!-- Event Announcement Modal -->
   <div id="event-modal" class="modal-backdrop">
     <div class="modal card" style="text-align:center;">
         <h1 id="event-title" style="font-size:28px; margin:0;"></h1>
         <div id="event-body" class="muted" style="margin-top:16px; text-align:left;"></div>
+        <button id="btn-close-event" class="btn btn-primary w-full mt-4">Continue</button>
     </div>
   </div>
 
-  <!-- Game Over Modal -->
-  <div id="game-over-modal" class="modal-backdrop">
-    <div class="modal card" style="text-align:center;">
-      <h1 id="game-over-title" style="font-size:28px; margin:0;"></h1>
-      <p id="game-over-reason" class="muted" style="margin-top:8px;"></p>
-      <div id="game-over-roles" style="margin-top:16px; text-align:left;"></div>
-      <button id="btn-back-to-lobby" class="btn btn-primary" style="width:100%; margin-top:24px;">Back to Lobby</button>
-    </div>
-  </div>
-
-  <!-- How to Play Modal -->
   <div id="rules-modal-backdrop" class="modal-backdrop">
     <div class="modal card">
         <h2 style="margin-top:0">How to Play Who's Wolf</h2>
@@ -285,12 +254,10 @@
   </div>
 
   <script type="module">
-    // ---------- Eager Firebase Imports ----------
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged, signInAnonymously, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import { getFirestore, doc, collection, setDoc, getDoc, runTransaction, onSnapshot, deleteField, updateDoc, deleteDoc, serverTimestamp, query, orderBy, addDoc, where, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-    // ---------- UI Helpers ----------
     const screens = document.querySelectorAll('.screen');
     function showScreen(id){ screens.forEach(s => s.classList.toggle('active', s.id === id)); }
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -302,11 +269,10 @@
       t.classList.add('show');
       setTimeout(()=> t.classList.remove('show'), 3000);
     }
-    window.showModal = (id, show) => { // Make it global for inline onclick
+    window.showModal = (id, show) => {
         document.getElementById(id)?.classList.toggle('active', show);
     }
 
-    // ---------- Firebase Initialization ----------
     let auth, db;
     const firebaseConfig = {
       apiKey: "AIzaSyCsPjYivo2bQp-fsr5wcdBfTRIiAcSbJNo",
@@ -329,7 +295,6 @@
         }
     }
 
-    // ---------- Auth & User Profile Logic ----------
     let currentUser = null;
     const DEV_PREFIX = "[slnana]";
     
@@ -350,9 +315,7 @@
                 }
                 setLoading(false);
             } else {
-                try {
-                    await signInAnonymously(auth);
-                } catch (error) {
+                try { await signInAnonymously(auth); } catch (error) {
                     console.error("Anonymous Sign In Error:", error);
                     showToast('Failed to connect to server.', true);
                 }
@@ -374,10 +337,7 @@
     }
 
     async function setNickname(nickname) {
-        if (!nickname) {
-            showToast('Nickname cannot be empty!', true);
-            return false;
-        }
+        if (!nickname) { showToast('Nickname cannot be empty!', true); return false; }
         setLoading(true);
         try {
             await updateProfile(auth.currentUser, { displayName: nickname });
@@ -390,22 +350,17 @@
             console.error("Update Profile Error:", error);
             showToast('Failed to save nickname.', true);
             return false;
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     }
 
     document.getElementById('btn-enter-lobby').addEventListener('click', () => {
         setNickname(document.getElementById('nickname-input').value.trim());
     });
-
     document.getElementById('btn-edit-name').addEventListener('click', () => {
         const newName = prompt("Enter new nickname:", currentUser.displayName);
         if (newName) setNickname(newName.trim());
     });
 
-
-    // ---------- Room Flow & Logic ----------
     let currentRoomId = null;
     let roomUnsub = null;
     let chatUnsub = null;
@@ -423,11 +378,7 @@
         presenceInterval = setInterval(async () => {
             if (currentRoomId && currentUser && db) {
                 const roomRef = doc(db, 'rooms', currentRoomId);
-                try {
-                    await updateDoc(roomRef, {
-                        [`players.${currentUser.uid}.lastSeen`]: serverTimestamp()
-                    });
-                } catch (e) { /* Fail silently */ }
+                try { await updateDoc(roomRef, { [`players.${currentUser.uid}.lastSeen`]: serverTimestamp() }); } catch (e) { /* Fail silently */ }
             }
         }, 15000);
     }
@@ -442,33 +393,19 @@
       try {
         const code = Math.random().toString(36).substring(2,8).toUpperCase();
         const roomRef = doc(db, 'rooms', code);
-        
-        const hostData = { 
-            nickname: currentUser.displayName, 
-            isHost: true,
-            isDeveloper: currentUser.isDeveloper,
-            lastSeen: serverTimestamp()
-        };
-        
         await setDoc(roomRef, { 
             hostId: currentUser.uid, 
-            players: { [currentUser.uid]: hostData }, 
-            settings: getSettingsFromUI(), 
-            state: 'lobby',
-            createdAt: serverTimestamp()
+            players: { [currentUser.uid]: { nickname: currentUser.displayName, isHost: true, isDeveloper: currentUser.isDeveloper, lastSeen: serverTimestamp() } }, 
+            settings: getSettingsFromUI(), state: 'lobby', createdAt: serverTimestamp()
         });
-        
         currentRoomId = code;
         try { window.history.replaceState({}, '', '?room=' + code); } catch (e) { console.warn("Could not update URL:", e); }
         subscribeToRoom(code);
         showToast('Room created: ' + code);
-
       } catch(e){
         console.error("Create Room Error:", e);
-        showToast('Failed to create room. Check Firestore rules.', true);
-      } finally {
-        setLoading(false);
-      }
+        showToast('Failed to create room.', true);
+      } finally { setLoading(false); }
     }
 
     async function joinRoom(code){
@@ -480,16 +417,8 @@
             if (!roomDoc.exists()) throw new Error("Room not found!");
             const roomData = roomDoc.data();
             if (roomData.state !== 'lobby') throw new Error("Game has already started!");
-            
-            const newPlayerData = {
-                nickname: currentUser.displayName,
-                isHost: false,
-                isDeveloper: currentUser.isDeveloper,
-                lastSeen: serverTimestamp()
-            };
-            transaction.update(roomRef, { [`players.${currentUser.uid}`]: newPlayerData });
+            transaction.update(roomRef, { [`players.${currentUser.uid}`]: { nickname: currentUser.displayName, isHost: false, isDeveloper: currentUser.isDeveloper, lastSeen: serverTimestamp() } });
         });
-
         currentRoomId = code;
         try { window.history.replaceState({}, '', '?room=' + code); } catch (e) { console.warn("Could not update URL:", e); }
         subscribeToRoom(code);
@@ -497,9 +426,7 @@
       } catch (error) {
           console.error("Join Room Error:", error);
           showToast(`Failed to join: ${error.message}`, true);
-      } finally {
-          setLoading(false);
-      }
+      } finally { setLoading(false); }
     }
 
     function subscribeToRoom(code){
@@ -508,34 +435,36 @@
       const roomRef = doc(db, 'rooms', code);
       roomUnsub = onSnapshot(roomRef, snap => {
         if(!snap.exists()){
-          showToast('Room closed by host.', true);
+          showToast('Room closed.', true);
           handleRoomClose();
           return;
         }
         const roomData = snap.data();
-        
-        if (localGameState.phase !== roomData.phase && (roomData.phase === 'day' || roomData.phase === 'night')) {
-            playPhaseTransition(roomData.phase);
-        }
-        
+        const oldState = localGameState.state;
         localGameState = roomData;
         
         if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby' && !roomData.processing) {
             hostGameLogic(roomData);
         }
 
-        if (roomData.state === 'lobby' && !roomData.players[currentUser.uid]) {
-            showToast("You were kicked from the room.", true);
+        if (roomData.state === 'lobby' && oldState !== 'lobby' && oldState !== undefined) {
+            showScreen('lobby-screen');
+            renderLobbyView(roomData);
+            return;
+        }
+        
+        if (roomData.state !== 'lobby' && !roomData.players[currentUser.uid]) {
+            showToast("You were kicked or the game ended.", true);
             handleRoomClose();
             return;
         }
 
         switch(roomData.state) {
             case 'lobby': showScreen('lobby-screen'); renderLobbyView(roomData); break;
-            case 'role_reveal': showScreen('game-screen'); renderRoleReveal(roomData); break;
-            case 'announcement': showScreen('game-screen'); renderAnnouncement(roomData); break;
-            case 'night': case 'day': showScreen('game-screen'); renderGamePhase(roomData); break;
-            case 'game_over': showScreen('game-screen'); renderGameOver(roomData); break;
+            case 'role_reveal': renderRoleReveal(roomData); break;
+            case 'night': case 'day': renderGamePhase(roomData, oldState); break;
+            case 'announcement': renderAnnouncement(roomData); break;
+            case 'game_over': renderGameOver(roomData); break;
         }
       }, err => {
         console.error("Room subscription error:", err);
@@ -555,15 +484,10 @@
             snapshot.forEach(doc => {
                 const msg = doc.data();
                 const msgEl = document.createElement('div');
-                
                 const isDev = msg.isDeveloper;
                 const displayName = isDev ? msg.nickname.substring(DEV_PREFIX.length).trim() : msg.nickname;
-
                 let nickHTML = `<strong>${displayName}</strong>`;
-                if(isDev) {
-                    nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
-                }
-
+                if(isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
                 msgEl.innerHTML = `<p class="mb-1">${nickHTML}: ${msg.text}</p>`;
                 chatMessages.appendChild(msgEl);
             });
@@ -605,14 +529,9 @@
         if (!currentRoomId) return;
         const roomRef = doc(db, "rooms", currentRoomId);
         try {
-            await updateDoc(roomRef, {
-                [`players.${playerIdToKick}`]: deleteField()
-            });
+            await updateDoc(roomRef, { [`players.${playerIdToKick}`]: deleteField() });
             showToast("Player kicked successfully.");
-        } catch (e) {
-            console.error("Kick Player Error:", e);
-            showToast("Failed to kick player.", true);
-        }
+        } catch (e) { console.error("Kick Player Error:", e); showToast("Failed to kick player.", true); }
     }
 
     function renderLobbyView(roomData){
@@ -620,17 +539,7 @@
       const codeDisplay = document.getElementById('room-code-display');
       codeDisplay.textContent = currentRoomId || '----';
       codeDisplay.onclick = () => {
-          const tempInput = document.createElement('input');
-          document.body.appendChild(tempInput);
-          tempInput.value = currentRoomId;
-          tempInput.select();
-          try {
-              document.execCommand('copy');
-              showToast('Room code copied!');
-          } catch (err) {
-              showToast('Failed to copy code.', true);
-          }
-          document.body.removeChild(tempInput);
+          navigator.clipboard.writeText(currentRoomId).then(() => showToast('Room code copied!'), () => showToast('Failed to copy code.', true));
       };
 
       const list = document.getElementById('player-list');
@@ -638,56 +547,40 @@
       const players = roomData.players || {};
       const playerIds = Object.keys(players);
       document.getElementById('player-count').textContent = playerIds.length;
-      
       const isCurrentUserHost = roomData.hostId === currentUser.uid;
 
       playerIds.forEach(pid => {
         const p = players[pid];
         const el = document.createElement('div');
         el.className = 'flex justify-between items-center p-2 rounded-lg mb-2';
-        
         const isDev = p.isDeveloper;
         const displayName = isDev ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
-        
         const isOnline = p.lastSeen && (Date.now() / 1000 - p.lastSeen.seconds < 30);
         let onlineIndicatorHTML = '';
         if (currentUser.isDeveloper && pid !== currentUser.uid) {
-            const color = isOnline ? '#22c55e' : '#6b7280';
-            onlineIndicatorHTML = `<span style="color: ${color}; font-size: 1.2em; margin-right: 8px;" title="${isOnline ? 'Online' : 'Offline'}">●</span>`;
+            onlineIndicatorHTML = `<span style="color: ${isOnline ? '#22c55e' : '#6b7280'}; font-size: 1.2em; margin-right: 8px;" title="${isOnline ? 'Online' : 'Offline'}">●</span>`;
         }
-
         let nickHTML = `<strong>${displayName} ${p.isHost ? '👑' : ''}</strong>`;
-        if(isDev) {
-            nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
-        }
-        
+        if(isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
         const nameDiv = document.createElement('div');
         nameDiv.innerHTML = onlineIndicatorHTML + nickHTML;
         el.appendChild(nameDiv);
 
-        const canBeKicked = pid !== currentUser.uid && !p.isHost;
-        if ((isCurrentUserHost || currentUser.isDeveloper) && canBeKicked) {
+        if ((isCurrentUserHost || currentUser.isDeveloper) && pid !== currentUser.uid && !p.isHost) {
             const kickBtn = document.createElement('button');
             kickBtn.textContent = 'Kick';
             kickBtn.className = 'btn btn-danger text-xs px-2 py-1';
-            kickBtn.onclick = () => {
-                if(confirm(`Are you sure you want to kick ${displayName}?`)) {
-                    kickPlayer(pid);
-                }
-            };
+            kickBtn.onclick = () => { if(confirm(`Are you sure you want to kick ${displayName}?`)) kickPlayer(pid); };
             el.appendChild(kickBtn);
         }
-        
         list.appendChild(el);
       });
 
       document.getElementById('room-settings-panel').style.display = isCurrentUserHost ? 'block' : 'none';
       document.getElementById('btn-start').classList.toggle('hidden', !isCurrentUserHost || playerIds.length < 3);
-      
       updateSettingsUI(roomData.settings, !isCurrentUserHost);
     }
     
-    // ---------- Settings Management ----------
     function getSettingsFromUI() {
         return {
             numWerewolves: parseInt(document.getElementById('setting-wolves').value || 1),
@@ -717,53 +610,34 @@
             if (snap.exists() && snap.data().hostId === currentUser.uid) {
                 await updateDoc(roomRef, { settings: getSettingsFromUI() });
             }
-        } catch (e) {
-            console.error("Update Settings Error:", e);
-            showToast("Failed to save settings.", true);
-        }
+        } catch (e) { console.error("Update Settings Error:", e); showToast("Failed to save settings.", true); }
     }
-
-    // ---------- GAME LOGIC ----------
 
     async function hostGameLogic(roomData) {
         const roomRef = doc(db, 'rooms', currentRoomId);
         const { state, players, phaseEndTime } = roomData;
 
-        if (state === 'role_reveal') {
-            const allReady = Object.values(players).every(p => p.ready);
-            if (allReady) {
-                await updateDoc(roomRef, { processing: true });
-                const endTime = Timestamp.fromMillis(Date.now() + roomData.settings.nightDuration * 1000);
-                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime, processing: false });
-            }
-            return;
-        }
-
-        if ((state === 'night' || state === 'day' || state === 'announcement') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
+        if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
-            let nextState = {};
+            let nextStateData = {};
             
-            if (state === 'announcement') {
-                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
-                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-                nextState = { state: roomData.phase, phaseEndTime: endTime, announcement: null };
-            } else if (state === 'night') {
-                nextState = processNightActions(roomData);
+            if (state === 'night') {
+                nextStateData = processNightActions(roomData);
             } else { // day
-                nextState = processDayVotes(roomData);
+                nextStateData = processDayVotes(roomData);
             }
             
-            const winState = checkWinCondition(nextState.players || players);
+            const winState = checkWinCondition(nextStateData.players || players);
             if (winState) {
                 await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
             } else {
-                await updateDoc(roomRef, { ...nextState, processing: false });
+                await updateDoc(roomRef, { ...nextStateData, processing: false });
             }
         }
     }
     
     function processNightActions(roomData) {
-        let { players, turn, settings } = roomData;
+        let { players, turn } = roomData;
         let events = [];
         const wolfVotes = {};
         let doctorSaveTarget = null;
@@ -772,8 +646,7 @@
         Object.entries(players).forEach(([pid, p]) => {
             if (p.isAlive && p.actionTarget) {
                 if (p.role === 'werewolf') {
-                    const target = p.actionTarget;
-                    wolfVotes[target] = (wolfVotes[target] || 0) + 1;
+                    wolfVotes[p.actionTarget] = (wolfVotes[p.actionTarget] || 0) + 1;
                 } else if (p.role === 'doctor') {
                     doctorSaveTarget = p.actionTarget;
                 } else if (p.role === 'hunter' && !p.hasUsedAbility) {
@@ -783,34 +656,28 @@
             }
         });
 
-        let killedByWolvesId = null;
-        if (Object.keys(wolfVotes).length > 0) {
-            killedByWolvesId = Object.keys(wolfVotes).reduce((a, b) => wolfVotes[a] > wolfVotes[b] ? a : b);
-        }
-
+        let killedByWolvesId = Object.keys(wolfVotes).length > 0 ? Object.keys(wolfVotes).reduce((a, b) => wolfVotes[a] > wolfVotes[b] ? a : b) : null;
         const deaths = new Set();
-        if (killedByWolvesId && killedByWolvesId !== doctorSaveTarget) {
-            deaths.add(killedByWolvesId);
-        }
-        if (hunterShotTarget && hunterShotTarget !== doctorSaveTarget) {
-            deaths.add(hunterShotTarget);
-        }
-
-        if (deaths.size > 0) {
-            deaths.forEach(pid => {
+        if (killedByWolvesId && killedByWolvesId !== doctorSaveTarget) deaths.add(killedByWolvesId);
+        if (hunterShotTarget) deaths.add(hunterShotTarget);
+        
+        deaths.forEach(pid => {
+            if (players[pid].isAlive) { // Check if not already dead from another source
                 players[pid].isAlive = false;
                 events.push(`**${players[pid].nickname}** was found dead.`);
-            });
-        } else {
-            events.push("The night was quiet... No one died.");
-        }
+            }
+        });
+
+        if (events.length === 0) events.push("The night was quiet... No one died.");
+        
+        Object.keys(players).forEach(pid => { players[pid].actionTarget = null; });
 
         return {
             state: 'announcement',
             phase: 'day',
             players: players,
             announcement: { title: `Night ${turn} ended`, events: events, deaths: deaths.size > 0 },
-            phaseEndTime: Timestamp.fromMillis(Date.now() + 5000)
+            phaseEndTime: Timestamp.fromMillis(Date.now() + 8000)
         };
     }
 
@@ -830,28 +697,17 @@
         });
 
         let eliminatedPlayerId = null;
-        let maxVotes = 0;
-        let isTie = false;
         if (Object.keys(votes).length > 0) {
-            for (const [pid, count] of Object.entries(votes)) {
-                if (count > maxVotes) {
-                    maxVotes = count;
-                    eliminatedPlayerId = pid;
-                    isTie = false;
-                } else if (count === maxVotes) {
-                    isTie = true;
-                }
+            const sortedVotes = Object.entries(votes).sort(([,a],[,b]) => b-a);
+            if (sortedVotes.length === 1 || sortedVotes[0][1] > sortedVotes[1][1]) {
+                eliminatedPlayerId = sortedVotes[0][0];
             }
         }
 
-        if (isTie) eliminatedPlayerId = null;
-        
         events.push("The votes are in:");
-        Object.entries(players).forEach(([pid, p]) => {
-            if (p.isAlive) {
-                const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
-                events.push(`**${p.nickname}**: ${votes[pid] || 0} votes ${voterList}`);
-            }
+        Object.entries(players).filter(([,p])=>p.isAlive).forEach(([pid, p]) => {
+            const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
+            events.push(`**${p.nickname}**: ${votes[pid] || 0} votes ${voterList}`);
         });
         events.push("<hr class='my-2 border-gray-700'>");
 
@@ -862,10 +718,7 @@
             events.push("The vote was tied. No one was eliminated.");
         }
 
-        Object.keys(players).forEach(pid => {
-            players[pid].actionTarget = null;
-            players[pid].votedFor = null;
-        });
+        Object.keys(players).forEach(pid => { players[pid].votedFor = null; });
 
         return {
             state: 'announcement',
@@ -873,7 +726,7 @@
             turn: turn + 1,
             players: players,
             announcement: { title: `Day ${turn} ended`, events: events, deaths: !!eliminatedPlayerId },
-            phaseEndTime: Timestamp.fromMillis(Date.now() + 8000) // Longer for reading votes
+            phaseEndTime: Timestamp.fromMillis(Date.now() + 10000)
         };
     }
 
@@ -881,16 +734,10 @@
         const alivePlayers = Object.values(players).filter(p => p.isAlive);
         const aliveWolves = alivePlayers.filter(p => p.role === 'werewolf');
         const aliveVillagers = alivePlayers.filter(p => p.role !== 'werewolf');
-
-        if (aliveWolves.length === 0) {
-            return { winningTeam: "Villagers", reason: "All werewolves have been eliminated!", players };
-        }
-        if (aliveWolves.length >= aliveVillagers.length) {
-            return { winningTeam: "Werewolves", reason: "The werewolves have taken over the village!", players };
-        }
+        if (aliveWolves.length === 0) return { winningTeam: "Villagers", reason: "All werewolves have been eliminated!", players };
+        if (aliveWolves.length >= aliveVillagers.length) return { winningTeam: "Werewolves", reason: "The werewolves have taken over the village!", players };
         return null;
     }
-
 
     async function startGame() {
         setLoading(true);
@@ -900,51 +747,29 @@
                 const roomDoc = await transaction.get(roomRef);
                 if (!roomDoc.exists()) throw new Error("Room not found.");
                 const roomData = roomDoc.data();
-                
                 const playerIds = Object.keys(roomData.players);
                 const settings = roomData.settings;
-
-                let roles = [];
-                for (let i = 0; i < settings.numWerewolves; i++) roles.push('werewolf');
+                let roles = Array(settings.numWerewolves).fill('werewolf');
                 if (settings.includeSeer) roles.push('seer');
                 if (settings.includeDoctor) roles.push('doctor');
                 if (settings.includeHunter) roles.push('hunter');
                 while (roles.length < playerIds.length) roles.push('villager');
-                
-                for (let i = roles.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [roles[i], roles[j]] = [roles[j], roles[i]];
-                }
+                roles.sort(() => Math.random() - 0.5);
 
                 const updatedPlayers = { ...roomData.players };
                 playerIds.forEach((pid, index) => {
-                    updatedPlayers[pid] = {
-                        ...updatedPlayers[pid],
-                        isAlive: true,
-                        role: roles[index],
-                        votedFor: null,
-                        actionTarget: null,
-                        ready: false,
-                        hasUsedAbility: false, // For Hunter
-                    };
+                    updatedPlayers[pid] = { ...updatedPlayers[pid], isAlive: true, role: roles[index], votedFor: null, actionTarget: null, hasUsedAbility: false, };
                 });
-
                 transaction.update(roomRef, {
-                    state: 'role_reveal',
-                    players: updatedPlayers,
-                    turn: 1,
-                    phase: 'night',
-                    events: [],
-                    announcement: null,
+                    state: 'role_reveal', players: updatedPlayers, turn: 1, phase: 'night',
+                    phaseEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 seconds for role reveal
                     processing: false,
                 });
             });
         } catch (e) {
             console.error("Start Game Error:", e);
             showToast("Failed to start game.", true);
-        } finally {
-            setLoading(false);
-        }
+        } finally { setLoading(false); }
     }
     
     function renderRoleReveal(roomData) {
@@ -954,7 +779,7 @@
             werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
             seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
-            hunter: { emoji: '�', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
+            hunter: { emoji: '👮', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
             villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
         };
 
@@ -968,40 +793,42 @@
             if(allies.length > 0) {
                 const allyNames = allies.map(a => a.isDeveloper ? a.nickname.substring(DEV_PREFIX.length).trim() : a.nickname);
                 alliesDiv.innerHTML = `<p class="muted">Your fellow werewolves are: <strong>${allyNames.join(', ')}</strong></p>`;
-            } else {
-                alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`;
-            }
-        } else {
-            alliesDiv.innerHTML = '';
-        }
+            } else { alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`; }
+        } else { alliesDiv.innerHTML = ''; }
 
-        showModal('role-reveal-modal', true);
+        showScreen('role-reveal-overlay');
         setTimeout(async () => {
-            if (document.getElementById('role-reveal-modal').classList.contains('active')) {
-                showModal('role-reveal-modal', false);
-                const roomRef = doc(db, 'rooms', currentRoomId);
-                await updateDoc(roomRef, { [`players.${currentUser.uid}.ready`]: true });
-            }
+            showScreen('role-reveal-overlay');
+            const roomRef = doc(db, 'rooms', currentRoomId);
+            const duration = roomData.settings.nightDuration;
+            const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+            await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
         }, 5000);
     }
 
     function renderAnnouncement(roomData) {
+        showScreen('game-screen');
         const { title, events, deaths } = roomData.announcement;
         document.getElementById('event-title').textContent = title;
-        document.getElementById('event-body').innerHTML = events.map(e => `<p>${e}</p>`).join('');
+        document.getElementById('event-body').innerHTML = events.map(e => `<p>${e.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('');
         showModal('event-modal', true);
-
         if (deaths) {
             document.body.classList.add('shake');
             setTimeout(() => document.body.classList.remove('shake'), 500);
         }
-
-        setTimeout(async () => {
+        
+        document.getElementById('btn-close-event').onclick = async () => {
             showModal('event-modal', false);
-        }, roomData.phaseEndTime.toMillis() - Date.now() - 500);
+            const roomRef = doc(db, 'rooms', currentRoomId);
+            const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+            const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+            await updateDoc(roomRef, { state: roomData.phase, phaseEndTime: endTime, announcement: null });
+        };
     }
     
-    function renderGamePhase(roomData) {
+    function renderGamePhase(roomData, oldState) {
+        showScreen('game-screen');
+        if(oldState !== roomData.state) playPhaseTransition(roomData.phase, roomData.turn);
         renderGamePlayerList(roomData);
         renderPlayerCards(roomData);
         updateTimer(roomData.phaseEndTime);
@@ -1017,16 +844,13 @@
         const canChat = !isNight && (myData.isAlive || currentUser.isDeveloper);
         chatInput.disabled = !canChat;
         chatSend.disabled = !canChat;
-        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled for the dead.';
+        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled.';
     }
     
     function renderPlayerCards(roomData) {
         const mainContent = document.getElementById('game-main-content');
         mainContent.innerHTML = '';
-        mainContent.style.display = 'grid';
-        mainContent.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
-        mainContent.style.gap = '16px';
-        
+        mainContent.className = 'card p-4 flex-1 overflow-y-auto grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
         const myData = roomData.players[currentUser.uid];
 
         Object.entries(roomData.players).forEach(([pid, p]) => {
@@ -1034,65 +858,42 @@
             card.className = 'p-4 rounded-lg flex flex-col items-center justify-between text-center';
             card.style.background = 'rgba(255,255,255,0.02)';
             card.style.border = '2px solid transparent';
-            card.style.aspectRatio = '1 / 1';
+            card.style.aspectRatio = '1 / 1.2';
 
             const isMe = pid === currentUser.uid;
             const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
 
-            let statusHTML = p.isAlive ? `<div class="text-4xl">🙂</div>` : `<div class="text-4xl">👻</div>`;
-            
             card.innerHTML = `
                 <div>
-                    ${statusHTML}
-                    <strong class="mt-2">${displayName}</strong>
+                    <div class="text-4xl">${p.isAlive ? '🙂' : '👻'}</div>
+                    <strong class="mt-2 block">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
-                <div class="flex gap-2 mt-3"></div>
-            `;
+                <div class="flex gap-2 mt-3 text-2xl"></div>`;
             
             const actionsContainer = card.querySelector('.flex');
-            const hasActed = !!myData.actionTarget;
             const canAct = (myData.isAlive || currentUser.isDeveloper) && p.isAlive && !isMe;
             
-            const iconSVG = {
-                kill: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8m-1.99-2.442a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L2.01 6.265a.5.5 0 0 1 0-.707m11.98 0a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L13.28 6.265a.5.5 0 0 1 0-.707M6 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/></svg>`,
-                seer: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/></svg>`,
-                doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7.354 1.646a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L9 3.707V6.5a.5.5 0 0 1-1 0V3.707L7.354 3.053a.5.5 0 1 1-.708-.708z"/><path d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8m15 0A8 8 0 1 0 0 8a8 8 0 0 0 16 0M4.5 7.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z"/></svg>`,
-                hunter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H2a2 2 0 0 1-2-2v-2H0V9a2 2 0 0 1 2-2h2V5a2 2 0 0 1 2-2h2V1a2 2 0 0 1 2-2z"/></svg>`,
-                revive: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`
-            };
-            
-            if (roomData.phase === 'night') {
+            if (roomData.phase === 'night' && canAct) {
                 if (currentUser.isDeveloper) {
-                    if(p.isAlive && !isMe) {
-                        actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">${iconSVG.kill}</button>`;
-                        actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">${iconSVG.seer}</button>`;
-                        actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">${iconSVG.doctor}</button>`;
-                    } else if (!p.isAlive) {
-                        actionsContainer.innerHTML += `<button title="Revive" class="btn btn-secondary p-2" onclick="dev_togglePlayerAlive('${pid}', true)">${iconSVG.revive}</button>`;
-                    }
-                } 
-                else if (canAct && !hasActed) {
-                    if (myData.role === 'werewolf') actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">${iconSVG.kill}</button>`;
-                    if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">${iconSVG.seer}</button>`;
-                    if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">${iconSVG.doctor}</button>`;
-                    if (myData.role === 'hunter' && !myData.hasUsedAbility) actionsContainer.innerHTML += `<button title="Shoot" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'hunter')">${iconSVG.hunter}</button>`;
+                    actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
+                    actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}', true)">👁️</button>`;
+                    actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
+                } else if (!myData.actionTarget) {
+                    if (myData.role === 'werewolf') actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
+                    if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}')">👁️</button>`;
+                    if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
+                    if (myData.role === 'hunter' && !myData.hasUsedAbility) actionsContainer.innerHTML += `<button title="Shoot" class="p-1" onclick="performNightAction('${pid}')">🔫</button>`;
                 }
-            } else {
-                if (myData.isAlive && p.isAlive && !isMe && !myData.votedFor) {
-                    actionsContainer.innerHTML += `<button class="btn btn-primary px-4" onclick="voteForPlayer('${pid}')">Vote</button>`;
-                }
+            } else if (roomData.phase === 'day' && myData.isAlive && p.isAlive && !isMe && !myData.votedFor) {
+                actionsContainer.innerHTML += `<button class="btn btn-primary px-4 text-sm" onclick="voteForPlayer('${pid}')">Vote</button>`;
             }
             
             if (!p.isAlive) card.style.opacity = '0.5';
-            if (myData.actionTarget === pid || (typeof myData.actionTarget === 'object' && myData.actionTarget?.target === pid) || myData.votedFor === pid) {
-                card.classList.add('targeted-card');
-            }
-
+            if (myData.actionTarget === pid || myData.votedFor === pid) card.classList.add('targeted-card');
             mainContent.appendChild(card);
         });
     }
-
 
     function renderGamePlayerList(roomData) {
         const list = document.getElementById('game-player-list');
@@ -1102,62 +903,59 @@
         Object.entries(roomData.players).forEach(([pid, p]) => {
             const el = document.createElement('div');
             el.className = 'p-2 rounded-lg mb-2 flex justify-between items-center transition-all';
-            
             const isMe = pid === currentUser.uid;
-            const isAlive = p.isAlive;
             const isDev = p.isDeveloper;
             const displayName = isDev ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
             
-            let statusIndicator = isAlive ? '🟢' : '👻';
             let roleIndicator = '';
-            
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
-            if ((myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf') || (isMe) || (currentUser.isDeveloper)) {
+            if ((!p.isAlive && currentUser.isDeveloper) || (myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf') || isMe || currentUser.isDeveloper) {
                 roleIndicator = roleEmojis[p.role];
             }
-
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
             if (isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
-
-            el.innerHTML = `<div><span class="mr-2">${statusIndicator}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
-            
-            if (!isAlive) el.style.opacity = '0.5';
+            el.innerHTML = `<div><span class="mr-2">${p.isAlive ? '🙂' : '👻'}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
+            if (!p.isAlive) el.style.opacity = '0.5';
             if (isMe) el.style.background = 'rgba(255,255,255,0.05)';
-            
             list.appendChild(el);
         });
-        
         document.getElementById('developer-panel').classList.toggle('hidden', !currentUser.isDeveloper);
     }
     
     function renderGameOver(roomData) {
         const { winningTeam, reason, players } = roomData.gameOver;
-        document.getElementById('game-over-title').textContent = `${winningTeam} Win!`;
-        document.getElementById('game-over-reason').textContent = reason;
+        const title = `${winningTeam} Win!`;
+        const body = `<p>${reason}</p><h4 class='mt-4'>Final Roles:</h4>` + 
+            Object.values(players).map(p => {
+                const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
+                const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
+                return `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
+            }).join('');
         
-        const rolesList = document.getElementById('game-over-roles');
-        rolesList.innerHTML = '<h4>Final Roles:</h4>';
-        Object.values(players).forEach(p => {
-            const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
-            const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
-            rolesList.innerHTML += `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
-        });
-        
-        showModal('game-over-modal', true);
+        document.getElementById('event-title').textContent = title;
+        document.getElementById('event-body').innerHTML = body;
+        document.getElementById('btn-close-event').textContent = "Back to Lobby";
+        document.getElementById('btn-close-event').onclick = async () => {
+            showModal('event-modal', false);
+            if (localGameState.hostId === currentUser.uid) {
+                await deleteDoc(doc(db, 'rooms', currentRoomId));
+            }
+            handleRoomClose();
+        };
+        showModal('event-modal', true);
     }
 
-    async function performNightAction(targetId, actionType) {
-        const myData = localGameState.players[currentUser.uid];
-        if (myData.role === 'seer' || (currentUser.isDeveloper && actionType === 'seer')) {
+    async function performNightAction(targetId, isSeerAction = false) {
+        if (isSeerAction) {
             const targetPlayer = localGameState.players[targetId];
             document.getElementById('seer-result-body').textContent = `${targetPlayer.nickname} is a ${targetPlayer.role}.`;
             showModal('seer-result-modal', true);
+            showToast('Vision received.');
+        } else {
+            showToast('Action registered.');
+            const roomRef = doc(db, 'rooms', currentRoomId);
+            await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: targetId });
         }
-
-        showToast('Action registered.');
-        const roomRef = doc(db, 'rooms', currentRoomId);
-        const action = currentUser.isDeveloper ? { target: targetId, type: actionType } : targetId;
-        await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: action });
     }
 
     async function voteForPlayer(targetId) {
@@ -1170,99 +968,58 @@
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
         if (!text) return;
-        
-        const myData = {
-            nickname: currentUser.displayName,
-            isDeveloper: currentUser.isDeveloper
-        };
-        
         const chatRef = collection(db, 'rooms', currentRoomId, 'messages');
         await addDoc(chatRef, {
-            uid: currentUser.uid,
-            nickname: myData.nickname,
-            isDeveloper: myData.isDeveloper,
-            text: text,
-            timestamp: serverTimestamp()
+            uid: currentUser.uid, nickname: currentUser.displayName,
+            isDeveloper: currentUser.isDeveloper, text: text, timestamp: serverTimestamp()
         });
         input.value = '';
-    }
-    
-    async function dev_togglePlayerAlive(pid, shouldBeAlive) {
-        const roomRef = doc(db, 'rooms', currentRoomId);
-        await updateDoc(roomRef, { [`players.${pid}.isAlive`]: shouldBeAlive });
     }
     
     function updateTimer(endTime) {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         const timerEl = document.getElementById('game-timer');
-
-        if (!endTime || !endTime.seconds) {
-            timerEl.textContent = '--:--';
-            return;
-        }
-
+        if (!endTime || !endTime.seconds) { timerEl.textContent = '--:--'; return; }
         gameTimerInterval = setInterval(() => {
-            const now = Date.now();
-            const end = endTime.seconds * 1000;
-            const remaining = Math.max(0, Math.round((end - now) / 1000));
-            
-            const minutes = Math.floor(remaining / 60);
-            const seconds = remaining % 60;
-            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
+            const remaining = Math.max(0, Math.round((endTime.seconds * 1000 - Date.now()) / 1000));
+            timerEl.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
             if (remaining <= 0) clearInterval(gameTimerInterval);
         }, 1000);
     }
 
-    function playPhaseTransition(phase) {
+    function playPhaseTransition(phase, turn) {
         const overlay = document.getElementById('phase-transition-overlay');
         const icon = document.getElementById('phase-icon');
+        const title = document.getElementById('phase-title');
         
         if (phase === 'day') {
             overlay.className = 'day';
             icon.textContent = '☀️';
+            title.textContent = `Day ${turn}`;
         } else {
             overlay.className = 'night';
             icon.textContent = '🌙';
+            title.textContent = `Night ${turn}`;
         }
-
         overlay.classList.add('visible');
-        setTimeout(() => {
-            overlay.classList.remove('visible');
-        }, 2000);
+        setTimeout(() => overlay.classList.remove('visible'), 2000);
     }
 
-    // Make functions globally accessible for onclick attributes
     window.performNightAction = performNightAction;
     window.voteForPlayer = voteForPlayer;
-    window.dev_togglePlayerAlive = dev_togglePlayerAlive;
 
-    // ---------- Event Listeners ----------
     document.getElementById('btn-create-room').addEventListener('click', createRoom);
     document.getElementById('btn-join').addEventListener('click', ()=>{
       const code = document.getElementById('join-code').value.trim().toUpperCase();
-      if(!code){ showToast('Enter a room code', true); return; }
-      joinRoom(code);
+      if(code) joinRoom(code); else showToast('Enter a room code', true);
     });
     document.getElementById('btn-leave').addEventListener('click', leaveRoom);
     document.querySelectorAll('.setting-input').forEach(input => input.addEventListener('change', updateSettingsInDb));
     document.getElementById('btn-start').addEventListener('click', startGame);
-    document.getElementById('btn-close-role-reveal').addEventListener('click', async () => {
-        showModal('role-reveal-modal', false);
-        const roomRef = doc(db, 'rooms', currentRoomId);
-        await updateDoc(roomRef, { [`players.${currentUser.uid}.ready`]: true });
-    });
-    document.getElementById('btn-back-to-lobby').addEventListener('click', async () => {
-        showModal('game-over-modal', false);
-        const roomRef = doc(db, 'rooms', currentRoomId);
-        await updateDoc(roomRef, { state: 'lobby' });
-    });
     document.getElementById('chat-send').addEventListener('click', sendMessage);
-    document.getElementById('chat-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
-    });
+    document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     document.getElementById('dev-end-game').addEventListener('click', async () => {
-        if (confirm("Are you sure you want to end the game?")) {
+        if (confirm("End game?")) {
             const roomRef = doc(db, 'rooms', currentRoomId);
             const roomData = (await getDoc(roomRef)).data();
             await updateDoc(roomRef, { 
@@ -1272,18 +1029,13 @@
         }
     });
 
-    const rulesModal = document.getElementById('rules-modal-backdrop');
     document.getElementById('btn-how-to-play').addEventListener('click', () => showModal('rules-modal-backdrop', true));
     document.getElementById('btn-close-rules').addEventListener('click', () => showModal('rules-modal-backdrop', false));
 
-    // ---------- Initialization ----------
     (function init(){
       initializeFirebase();
-      const params = new URLSearchParams(location.search);
-      const roomCode = params.get('room');
-      if (roomCode) {
-        document.getElementById('join-code').value = roomCode.toUpperCase();
-      }
+      const roomCode = new URLSearchParams(location.search).get('room');
+      if (roomCode) document.getElementById('join-code').value = roomCode.toUpperCase();
     })();
   </script>
 </body>
