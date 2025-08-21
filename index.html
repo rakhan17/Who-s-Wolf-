@@ -103,7 +103,7 @@
 
   <div id="notification-toast"></div>
 
-  <div id="loading-overlay" class="screen active" style="z-index:40">
+  <div id="loading-overlay" class="screen active" data-screen-type="main" style="z-index:40">
     <div class="text-center">
       <div class="text-6xl">🐺</div>
       <h1 class="text-3xl my-2">Who's Wolf?</h1>
@@ -112,7 +112,7 @@
     </div>
   </div>
 
-  <div id="nickname-screen" class="screen" style="z-index:10">
+  <div id="nickname-screen" class="screen" data-screen-type="main" style="z-index:10">
     <div class="card w-full max-w-md text-center">
       <div class="text-6xl">🐺</div>
       <h1 class="text-3xl my-2">Welcome!</h1>
@@ -124,7 +124,7 @@
     </div>
   </div>
 
-  <div id="lobby-screen" class="screen" style="z-index:15">
+  <div id="lobby-screen" class="screen" data-screen-type="main" style="z-index:15">
     <div class="card w-full max-w-4xl">
       <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b" style="border-color: var(--border);">
         <div class="flex items-center gap-3">
@@ -203,7 +203,7 @@
     </div>
   </div>
 
-  <div id="game-screen" class="screen flex-col gap-4">
+  <div id="game-screen" class="screen flex-col gap-4" data-screen-type="main">
     <div class="card w-full p-3 px-6 flex justify-between items-center">
       <div>
         <h2 id="game-phase-title" class="m-0 text-2xl">Night 1</h2>
@@ -245,7 +245,7 @@
     </div>
   </div>
 
-  <div id="role-reveal-overlay" class="screen" style="z-index: 25; background: rgba(11, 18, 32, 0.9); text-align: center; color: white;">
+  <div id="role-reveal-overlay" class="screen" data-screen-type="overlay" style="z-index: 25; background: rgba(11, 18, 32, 0.9); text-align: center; color: white;">
       <div class="card">
         <div id="role-reveal-emoji" class="text-8xl mb-3"></div>
         <h1 id="role-reveal-name" class="text-3xl m-0"></h1>
@@ -293,11 +293,15 @@
     import { getAuth, onAuthStateChanged, signInAnonymously, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import { getFirestore, doc, collection, setDoc, getDoc, runTransaction, onSnapshot, deleteField, updateDoc, deleteDoc, serverTimestamp, query, orderBy, addDoc, where, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-    const screens = document.querySelectorAll('.screen');
-    function showScreen(id, show = true){ 
-        const screenEl = document.getElementById(id);
-        if (screenEl) screenEl.classList.toggle('active', show);
+    const mainScreens = document.querySelectorAll('[data-screen-type="main"]');
+    function setActiveScreen(id){ 
+        mainScreens.forEach(s => s.classList.toggle('active', s.id === id)); 
     }
+    function showOverlay(id, show = true) {
+        const overlayEl = document.getElementById(id);
+        if (overlayEl) overlayEl.classList.toggle('active', show);
+    }
+
     const loadingOverlay = document.getElementById('loading-overlay');
     function setLoading(on){ loadingOverlay.classList.toggle('active', on); }
     function showToast(msg, err=false){
@@ -361,9 +365,9 @@
                 };
                 if (user.displayName) {
                     updateWelcomeText(user.displayName);
-                    showScreen('lobby-screen');
+                    setActiveScreen('lobby-screen');
                 } else {
-                    showScreen('nickname-screen');
+                    setActiveScreen('nickname-screen');
                 }
                 setLoading(false);
             } else {
@@ -395,7 +399,7 @@
             currentUser.displayName = nickname;
             currentUser.isDeveloper = nickname.toLowerCase().startsWith(DEV_PREFIX);
             updateWelcomeText(nickname);
-            showScreen('lobby-screen');
+            setActiveScreen('lobby-screen');
             return true;
         } catch (error) {
             console.error("Update Profile Error:", error);
@@ -500,7 +504,7 @@
         }
 
         if (roomData.state === 'lobby' && oldState !== 'lobby' && oldState !== undefined) {
-            showScreen('lobby-screen');
+            setActiveScreen('lobby-screen');
             renderLobbyView(roomData);
             return;
         }
@@ -512,10 +516,10 @@
         }
 
         switch(roomData.state) {
-            case 'lobby': showScreen('lobby-screen'); renderLobbyView(roomData); break;
-            case 'role_reveal': renderRoleReveal(roomData); break;
+            case 'lobby': setActiveScreen('lobby-screen'); renderLobbyView(roomData); break;
+            case 'role_reveal': renderRoleReveal(roomData, oldState); break;
             case 'night': case 'day': renderGamePhase(roomData, oldState); break;
-            case 'announcement': renderAnnouncement(roomData); break;
+            case 'announcement': renderAnnouncement(roomData, oldState); break;
             case 'game_over': renderGameOver(roomData); break;
         }
       }, err => {
@@ -574,7 +578,7 @@
         if(gameTimerInterval) clearInterval(gameTimerInterval);
         try { window.history.replaceState({}, '', location.pathname); } catch (e) { console.warn("Could not update URL:", e); }
         setLobbyView(false);
-        showScreen('lobby-screen');
+        setActiveScreen('lobby-screen');
     }
     
     async function kickPlayer(playerIdToKick) {
@@ -862,13 +866,16 @@
         } finally { setLoading(false); }
     }
     
-    function renderRoleReveal(roomData) {
-        showScreen('game-screen', false); // Hide game screen if visible
-        showScreen('role-reveal-overlay');
-        const card = document.querySelector('#role-reveal-overlay .card');
-        card.classList.remove('reveal-animation');
-        void card.offsetWidth; // Trigger reflow to restart animation
-        card.classList.add('reveal-animation');
+    function renderRoleReveal(roomData, oldState) {
+        setActiveScreen('game-screen');
+        showOverlay('role-reveal-overlay');
+        
+        if (oldState !== 'role_reveal') {
+            const card = document.querySelector('#role-reveal-overlay .card');
+            card.classList.remove('reveal-animation');
+            void card.offsetWidth; // Trigger reflow to restart animation
+            card.classList.add('reveal-animation');
+        }
 
         const myPlayerData = roomData.players[currentUser.uid];
         const roleInfo = {
@@ -891,19 +898,19 @@
                 alliesDiv.innerHTML = `<p class="muted">Your fellow werewolves are: <strong>${allyNames.join(', ')}</strong></p>`;
             } else { alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`; }
         } else { alliesDiv.innerHTML = ''; }
-
-        // The transition is now handled by hostGameLogic, no client-side timer needed for state change.
     }
 
-    function renderAnnouncement(roomData) {
-        showScreen('game-screen');
-        const { title, events, deaths } = roomData.announcement;
-        document.getElementById('event-title').textContent = title;
-        document.getElementById('event-body').innerHTML = events.map(e => `<p>${e.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('');
-        showModal('event-modal', true);
-        if (deaths) {
-            document.body.classList.add('shake');
-            setTimeout(() => document.body.classList.remove('shake'), 500);
+    function renderAnnouncement(roomData, oldState) {
+        setActiveScreen('game-screen');
+        if (oldState !== 'announcement') {
+            const { title, events, deaths } = roomData.announcement;
+            document.getElementById('event-title').textContent = title;
+            document.getElementById('event-body').innerHTML = events.map(e => `<p>${e.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('');
+            showModal('event-modal', true);
+            if (deaths) {
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 500);
+            }
         }
         
         document.getElementById('btn-close-event').onclick = () => {
@@ -912,9 +919,9 @@
     }
     
     function renderGamePhase(roomData, oldState) {
-        showScreen('role-reveal-overlay', false);
+        showOverlay('role-reveal-overlay', false);
         showModal('event-modal', false);
-        showScreen('game-screen');
+        setActiveScreen('game-screen');
         
         const isNight = roomData.state === 'night';
         document.body.classList.toggle('night-phase-bg', isNight);
@@ -960,7 +967,7 @@
 
             card.innerHTML = `
                 <div>
-                    <div class="text-4xl">${p.isAlive ? '🙂' : '�'}</div>
+                    <div class="text-4xl">${p.isAlive ? '🙂' : '👻'}</div>
                     <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
