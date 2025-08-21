@@ -219,15 +219,18 @@
     </div>
 
     <div class="w-full flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
-      <div class="flex flex-col gap-4 w-full lg:w-72 order-2 lg:order-1 h-48 lg:h-auto">
+      <div class="flex flex-col gap-4 w-full lg:w-72 order-2 lg:order-1 h-auto">
         <div class="card p-4 flex-1 flex flex-col">
           <h3 class="m-0 mb-2">Players</h3>
           <div id="game-player-list" class="overflow-y-auto flex-1"></div>
         </div>
-        <div id="developer-panel" class="card hidden p-4">
-          <h4 class="m-0 mb-2 text-red-400">Developer Tools</h4>
-          <p class="muted text-xs">Use with caution!</p>
-          <button id="dev-end-game" class="btn btn-secondary w-full text-xs mt-2">End Game</button>
+        <!-- **FIX**: Mobile layout for dev tools and chat -->
+        <div class="flex lg:flex-col gap-4">
+            <div id="developer-panel" class="card hidden p-4 flex-1">
+              <h4 class="m-0 mb-2 text-red-400">Developer Tools</h4>
+              <p class="muted text-xs">Use with caution!</p>
+              <button id="dev-end-game" class="btn btn-secondary w-full text-xs mt-2">End Game</button>
+            </div>
         </div>
       </div>
 
@@ -369,7 +372,6 @@
                 } else {
                     setActiveScreen('nickname-screen');
                 }
-                setLoading(false);
             } else {
                 try { await signInAnonymously(auth); } catch (error) {
                     console.error("Anonymous Sign In Error:", error);
@@ -498,7 +500,6 @@
         const roomData = snap.data();
         const oldState = localGameState.state;
         
-        // **FIX**: Always update playerOrder for all clients when players object changes.
         if (roomData.players) {
             playerOrder = Object.keys(roomData.players).sort((a,b) => getDisplayName(roomData.players[a]).localeCompare(getDisplayName(roomData.players[b])));
         }
@@ -679,11 +680,17 @@
         const roomRef = doc(db, 'rooms', currentRoomId);
         const { state, players, phaseEndTime, announcementEndTime } = roomData;
 
-        // Authoritative logic for handling timed phases (role reveal and announcement)
         if ((state === 'announcement' || state === 'role_reveal') && announcementEndTime && Timestamp.now().seconds > announcementEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             
-            const nextPhase = roomData.phase; // This was set when we entered the timed phase
+            // **FIX**: Check win condition *after* an announcement phase, before starting the next game phase.
+            const winState = checkWinCondition(players);
+            if (winState) {
+                await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
+                return;
+            }
+
+            const nextPhase = roomData.phase;
             const duration = nextPhase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
             const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
 
@@ -697,7 +704,6 @@
             return;
         }
 
-        // Logic for handling day/night phase end
         if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             let nextStateData = {};
@@ -708,17 +714,12 @@
                 nextStateData = processDayVotes(roomData);
             }
             
-            const winState = checkWinCondition(nextStateData.players || players);
-            if (winState) {
-                await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
-            } else {
-                const ANNOUNCEMENT_DURATION_MS = 12000;
-                await updateDoc(roomRef, { 
-                    ...nextStateData, 
-                    announcementEndTime: Timestamp.fromMillis(Date.now() + ANNOUNCEMENT_DURATION_MS),
-                    processing: false 
-                });
-            }
+            const ANNOUNCEMENT_DURATION_MS = 12000;
+            await updateDoc(roomRef, { 
+                ...nextStateData, 
+                announcementEndTime: Timestamp.fromMillis(Date.now() + ANNOUNCEMENT_DURATION_MS),
+                processing: false 
+            });
         }
     }
     
@@ -802,9 +803,13 @@
         }
 
         events.push("The votes are in:");
-        Object.entries(players).filter(([,p])=>p.isAlive).forEach(([pid, p]) => {
-            const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
-            events.push(`**${getDisplayName(p)}**: ${votes[pid] || 0} votes ${voterList}`);
+        // **FIX**: Use stable playerOrder for consistent display in modal
+        playerOrder.forEach(pid => {
+            const p = players[pid];
+            if (p && p.isAlive) {
+                const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
+                events.push(`**${getDisplayName(p)}**: ${votes[pid] || 0} votes ${voterList}`);
+            }
         });
         events.push(`**Skipped**: ${skipVotes} votes`);
         events.push("<hr class='my-2 border-gray-700'>");
@@ -847,7 +852,6 @@
                 const playerIds = Object.keys(roomData.players);
                 const settings = roomData.settings;
                 
-                // **FIX**: Correct role assignment logic
                 const rolesToAssign = [];
                 for (let i = 0; i < settings.numWerewolves; i++) {
                     rolesToAssign.push('werewolf');
@@ -858,7 +862,7 @@
                 while (rolesToAssign.length < playerIds.length) {
                     rolesToAssign.push('villager');
                 }
-                rolesToAssign.sort(() => Math.random() - 0.5); // Shuffle the roles
+                rolesToAssign.sort(() => Math.random() - 0.5);
 
                 const updatedPlayers = { ...roomData.players };
                 playerIds.forEach((pid, index) => {
@@ -895,7 +899,7 @@
         if (oldState !== 'role_reveal') {
             const card = document.querySelector('#role-reveal-overlay .card');
             card.classList.remove('reveal-animation');
-            void card.offsetWidth; // Trigger reflow to restart animation
+            void card.offsetWidth;
             card.classList.add('reveal-animation');
         }
 
@@ -905,7 +909,7 @@
             seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
             hunter: { emoji: '👮', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
-            villager: { emoji: '�', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
+            villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
         };
 
         document.getElementById('role-reveal-emoji').textContent = roleInfo[myPlayerData.role].emoji;
@@ -1004,6 +1008,7 @@
                         actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performDevAction('${pid}', 'protect')">🛡️</button>`;
                     }
                     actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performDevAction('${pid}', 'seer')">👁️</button>`;
+                    // **FIX**: Allow developer to revive themselves
                     if (!p.isAlive) {
                         actionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
                     }
@@ -1107,6 +1112,23 @@
         const roomRef = doc(db, 'rooms', currentRoomId);
         showToast(`Dev Action: ${actionType} on ${getDisplayName(localGameState.players[targetId])}`);
         
+        // **FIX**: Optimistic UI update for instant feedback
+        if (actionType === 'kill' || actionType === 'protect') {
+            if (!localGameState.devActions) localGameState.devActions = {};
+            if (actionType === 'kill') {
+                let killList = localGameState.devActions.kill || [];
+                if (killList.includes(targetId)) {
+                    localGameState.devActions.kill = killList.filter(id => id !== targetId);
+                } else {
+                    killList.push(targetId);
+                    localGameState.devActions.kill = killList;
+                }
+            } else { // protect
+                localGameState.devActions.protect = localGameState.devActions.protect === targetId ? null : targetId;
+            }
+            renderPlayerCards(localGameState); // Re-render immediately with local state
+        }
+
         if (actionType === 'revive') {
             return await updateDoc(roomRef, { [`players.${targetId}.isAlive`]: true });
         }
