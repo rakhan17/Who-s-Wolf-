@@ -85,6 +85,7 @@
     #phase-transition-overlay.night { background: radial-gradient(circle, rgba(79,70,229,0.6) 0%, rgba(79,70,229,0) 70%); }
     #phase-transition-overlay.visible { opacity: 1; }
     #phase-title { font-size: 2rem; font-weight: bold; margin-top: -2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    .lag-indicator { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: #f97316; margin-left: 8px; }
   </style>
 </head>
 <body>
@@ -596,14 +597,15 @@
         el.className = 'flex justify-between items-center p-2 rounded-lg mb-2';
         const displayName = getDisplayName(p);
         const isOnline = p.lastSeen && (Date.now() / 1000 - p.lastSeen.seconds < 30);
-        let onlineIndicatorHTML = '';
-        if (currentUser.isDeveloper && pid !== currentUser.uid) {
-            onlineIndicatorHTML = `<span style="color: ${isOnline ? '#22c55e' : '#6b7280'}; font-size: 1.2em; margin-right: 8px;" title="${isOnline ? 'Online' : 'Offline'}">●</span>`;
+        let statusHTML = '';
+        if (!isOnline) {
+            statusHTML = `<span class="lag-indicator">Lag</span>`;
         }
         let nickHTML = `<strong>${displayName} ${p.isHost ? '👑' : ''}</strong>`;
         if(p.isDeveloper) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
         const nameDiv = document.createElement('div');
-        nameDiv.innerHTML = onlineIndicatorHTML + nickHTML;
+        nameDiv.innerHTML = `<div>${nickHTML}</div><div>${statusHTML}</div>`;
+        nameDiv.className = 'flex items-center';
         el.appendChild(nameDiv);
 
         if ((isCurrentUserHost || currentUser.isDeveloper) && pid !== currentUser.uid && !p.isHost) {
@@ -851,10 +853,13 @@
         showScreen('role-reveal-overlay');
         setTimeout(async () => {
             showScreen('role-reveal-overlay');
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            const duration = roomData.settings.nightDuration;
-            const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-            await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
+            if (localGameState.state !== 'role_reveal' || !currentRoomId) return;
+            if (localGameState.hostId === currentUser.uid) {
+                const roomRef = doc(db, 'rooms', currentRoomId);
+                const duration = roomData.settings.nightDuration;
+                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
+            }
         }, 5000);
     }
 
@@ -950,7 +955,7 @@
                     if (!p.isAlive) {
                         actionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
                     }
-                } else if (p.isAlive && !isMe && myData.isAlive && !myData.actionTarget) {
+                } else if (p.isAlive && !isMe && myData.isAlive) {
                     if (myData.role === 'werewolf' || myData.role === 'hunter') actionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
                     if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}')">👁️</button>`;
                     if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
@@ -961,7 +966,6 @@
             
             if (!p.isAlive) card.style.opacity = '0.5';
 
-            // Apply colored borders
             if (currentUser.isDeveloper) {
                 if (devActions.kill && devActions.kill.includes(pid)) card.classList.add('targeted-kill');
                 if (devActions.protect === pid) card.classList.add('targeted-protect');
@@ -990,7 +994,7 @@
             const displayName = getDisplayName(p);
             
             let roleIndicator = '';
-            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'�‍⚕️', hunter: '👮', villager:'👱'};
+            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
             if (currentUser.isDeveloper || isMe || (myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
             }
@@ -1029,6 +1033,13 @@
 
     async function performNightAction(targetId) {
         const myData = localGameState.players[currentUser.uid];
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        
+        if(myData.actionTarget === targetId) {
+            showToast('Action cancelled.');
+            return await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: deleteField() });
+        }
+
         if (myData.role === 'seer') {
             const targetPlayer = localGameState.players[targetId];
             document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)} is a ${targetPlayer.role}.`;
@@ -1036,7 +1047,6 @@
             showToast('Vision received.');
         } else {
             showToast('Action registered.');
-            const roomRef = doc(db, 'rooms', currentRoomId);
             await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: targetId });
         }
     }
@@ -1059,19 +1069,30 @@
             if (!roomDoc.exists()) return;
             const currentActions = roomDoc.data().devActions || {};
             if (actionType === 'kill') {
-                const killList = currentActions.kill || [];
-                if (!killList.includes(targetId)) killList.push(targetId);
+                let killList = currentActions.kill || [];
+                if (killList.includes(targetId)) {
+                    killList = killList.filter(id => id !== targetId); // Cancel action
+                } else {
+                    killList.push(targetId);
+                }
                 currentActions.kill = killList;
             } else if (actionType === 'protect') {
-                currentActions.protect = targetId;
+                currentActions.protect = currentActions.protect === targetId ? null : targetId; // Cancel action
             }
             transaction.update(roomRef, { devActions: currentActions });
         });
     }
 
     async function voteForPlayer(targetId) {
-        showToast('Vote cast.');
+        const myData = localGameState.players[currentUser.uid];
         const roomRef = doc(db, 'rooms', currentRoomId);
+
+        if (myData.votedFor === targetId) {
+            showToast('Vote cancelled.');
+            return await updateDoc(roomRef, { [`players.${currentUser.uid}.votedFor`]: deleteField() });
+        }
+        
+        showToast('Vote cast.');
         await updateDoc(roomRef, { [`players.${currentUser.uid}.votedFor`]: targetId });
     }
     
