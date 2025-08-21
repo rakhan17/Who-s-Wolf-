@@ -669,11 +669,11 @@
         const roomRef = doc(db, 'rooms', currentRoomId);
         const { state, players, phaseEndTime, announcementEndTime } = roomData;
 
-        // New authoritative logic for handling announcement phase end
-        if (state === 'announcement' && announcementEndTime && Timestamp.now().seconds > announcementEndTime.seconds) {
+        // Authoritative logic for handling timed phases (role reveal and announcement)
+        if ((state === 'announcement' || state === 'role_reveal') && announcementEndTime && Timestamp.now().seconds > announcementEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             
-            const nextPhase = roomData.phase; // This was set when we entered announcement
+            const nextPhase = roomData.phase; // This was set when we entered the timed phase
             const duration = nextPhase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
             const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
 
@@ -687,7 +687,7 @@
             return;
         }
 
-        // Existing logic for handling day/night phase end
+        // Logic for handling day/night phase end
         if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             let nextStateData = {};
@@ -849,7 +849,7 @@
                     updatedPlayers[pid] = { ...updatedPlayers[pid], isAlive: true, role: roles[index], votedFor: null, actionTarget: null, hasUsedAbility: false, };
                 });
                 
-                const ROLE_REVEAL_DURATION_MS = 8000;
+                const ROLE_REVEAL_DURATION_MS = 5000;
                 transaction.update(roomRef, {
                     state: 'role_reveal', players: updatedPlayers, turn: 1, phase: 'night',
                     announcementEndTime: Timestamp.fromMillis(Date.now() + ROLE_REVEAL_DURATION_MS),
@@ -960,7 +960,7 @@
 
             card.innerHTML = `
                 <div>
-                    <div class="text-4xl">${p.isAlive ? '🙂' : '👻'}</div>
+                    <div class="text-4xl">${p.isAlive ? '🙂' : '�'}</div>
                     <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
