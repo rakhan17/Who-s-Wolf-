@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Who's Wolf — Enhanced</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#0b1220; --muted:#9ca3af; --card:rgba(255,255,255,0.02); }
+    html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8;font-family:'Poppins',system-ui,Segoe UI,Roboto; overflow: hidden;}
+    
+    .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:28px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
+    .screen.active{ opacity:1; pointer-events:auto; }
+
+    .card{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));border-radius:14px;padding:24px;border:1px solid rgba(148,163,184,0.04);box-shadow:0 8px 24px rgba(2,6,23,0.6)}
+    .muted{color:var(--muted)}
+    .input-wrapper{position:relative;width:100%;}
+    .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
+    input.input-field{width:100%;padding:12px 14px 12px 44px;border-radius:12px;background:transparent;border:1px solid rgba(148,163,184,0.06);color:#e6eef8;outline:none}
+    input.input-field::placeholder{color:#94a3b8}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;padding:.7rem 1rem;border-radius:12px;font-weight:700;cursor:pointer;border:0; transition: all 0.2s ease;}
+    .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:linear-gradient(90deg,#7c3aed,#4f46e5);color:white}
+    .btn-secondary{background:#1f2937;color:#cbd5e1}
+    .btn-green{background:linear-gradient(90deg,#10b981,#06b6d4);color:white}
+    .spinner{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);border-top-color:white;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;z-index:50; opacity: 0; transition: opacity 0.3s ease;}
+    .modal{position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%, -50%) scale(0.95);min-width:280px;max-width:420px; opacity: 0; transition: all 0.3s ease;}
+    .modal-backdrop.active { display:block; opacity: 1; }
+    .modal-backdrop.active .modal { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+    #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
+    #notification-toast.show { opacity: 1; top: 30px; }
+    
+    .screen * { box-sizing:border-box }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- Notification Toast -->
+  <div id="notification-toast"></div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="screen active" style="background:linear-gradient(180deg, rgba(2,6,23,0.8), rgba(2,6,23,0.95));z-index:40">
+    <div style="text-align:center">
+      <div style="font-size:56px">🐺</div>
+      <h1 style="font-size:26px;margin:6px 0; color:white;">Who's Wolf?</h1>
+      <div class="spinner" style="width:32px; height:32px; border-width:3px; margin: 20px auto 12px auto;"></div>
+      <div class="muted">Menghubungkan...</div>
+    </div>
+  </div>
+
+  <!-- NICKNAME screen -->
+  <div id="nickname-screen" class="screen" style="z-index:10">
+    <div class="card" style="width:100%;max-width:420px;text-align:center">
+      <div style="font-size:56px">🐺</div>
+      <h1 style="font-size:26px;margin:6px 0">Selamat Datang!</h1>
+      <p class="muted">Masukkan nama panggilan untuk bermain</p>
+      <div style="margin-top:16px;">
+        <div class="input-wrapper" style="margin-bottom:12px"><span class="input-icon">🙍</span><input id="nickname-input" class="input-field" placeholder="Nickname Anda" maxlength="15"></div>
+        <button id="btn-enter-lobby" class="btn btn-primary" style="width:100%">Masuk Lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOBBY screen -->
+  <div id="lobby-screen" class="screen" style="z-index:15">
+    <div class="card" style="width:100%;max-width:900px">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center; padding-bottom: 16px; border-bottom: 1px solid rgba(148,163,184,0.06);">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:32px">🐺</div>
+            <h2 style="margin:0; font-size:22px;">Who's Wolf?</h2>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div id="welcome-container" style="text-align:right;">
+            <h2 id="welcome-text" style="margin:0; font-size:18px;">Welcome</h2>
+            <p class="muted" id="welcome-sub" style="margin:0; font-size:12px;">Ready to hunt?</p>
+          </div>
+          <button id="btn-how-to-play" class="btn btn-secondary">How to Play</button>
+        </div>
+      </div>
+
+      <!-- Pre-Room View -->
+      <div id="pre-room-view" style="margin-top:24px; display:flex; flex-direction:column; align-items:center; gap: 24px;">
+        <div style="text-align:center; width:100%; max-width:320px;">
+          <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Create a New Room</h3>
+          <button id="btn-create-room" class="btn btn-primary" style="width:100%;">
+            <span id="create-room-text">Create Room</span>
+          </button>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; width:100%; max-width: 320px; color: var(--muted);">
+          <hr style="flex:1; border:0; border-top: 1px solid rgba(148,163,184,0.1);">
+          <span>OR</span>
+          <hr style="flex:1; border:0; border-top: 1px solid rgba(148,163,184,0.1);">
+        </div>
+        <div style="text-align:center; width:100%; max-width:320px;">
+          <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Join an Existing Room</h3>
+          <div style="display:flex;gap:8px;">
+            <input id="join-code" class="input-field" placeholder="ROOM CODE" style="flex:1;padding-left:12px"/>
+            <button id="btn-join" class="btn btn-green">Join</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- In-Room View -->
+      <div id="in-room-view" class="hidden" style="margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3 style="margin:0">Room Code: <span id="room-code-display" style="color:#7c3aed; font-weight:700;"></span></h3>
+            <button id="btn-leave" class="btn btn-secondary">Leave Room</button>
+        </div>
+        <div style="display:flex;gap:16px">
+          <!-- Player List -->
+          <div style="flex:1">
+            <h4 style="margin:0 0 8px 0">Players (<span id="player-count">0</span>)</h4>
+            <div id="player-list" style="min-height:220px;max-height:220px;overflow:auto;border-radius:10px;padding:8px;background:rgba(255,255,255,0.01)"></div>
+          </div>
+          <!-- Room Settings (Host only) -->
+          <div id="room-settings-panel" style="width:360px">
+            <div class="card" style="padding:12px">
+              <h3 style="margin:0 0 8px 0">Room Settings</h3>
+              <label class="muted" style="font-size:13px">Werewolves</label>
+              <input id="setting-wolves" type="number" min="1" value="1" class="input-field setting-input" style="margin-bottom:8px"/>
+              <div style="display:flex;gap:8px">
+                <label class="muted" style="flex:1"><input id="setting-seer" type="checkbox" checked class="setting-input"/> Seer</label>
+                <label class="muted" style="flex:1"><input id="setting-doctor" type="checkbox" checked class="setting-input"/> Doctor</label>
+              </div>
+              <div style="height:8px"></div>
+              <div style="display:flex;gap:8px">
+                <label class="muted" style="flex:1">Day (s)<input id="setting-day" type="number" value="60" class="input-field setting-input" style="margin-top:6px"/></label>
+                <label class="muted" style="flex:1">Night (s)<input id="setting-night" type="number" value="45" class="input-field setting-input" style="margin-top:6px"/></label>
+              </div>
+            </div>
+             <button id="btn-start" class="btn btn-primary hidden" style="width:100%; margin-top:12px;">Start Game</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- How to Play Modal -->
+  <div id="rules-modal-backdrop" class="modal-backdrop">
+    <div id="rules-modal" class="modal card">
+        <h2 style="margin-top:0">How to Play Who's Wolf</h2>
+        <p class="muted">The game is divided into two phases: Night and Day. The goal of the Villagers is to eliminate all Werewolves. The goal of the Werewolves is to outnumber the Villagers.</p>
+        <h3 style="margin-bottom:8px;">Roles</h3>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div><strong>🐺 Werewolf</strong><p class="muted" style="font-size:14px;">During the night, wake up with fellow werewolves to choose one player to eliminate.</p></div>
+            <div><strong>👱 Villager</strong><p class="muted" style="font-size:14px;">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
+            <div><strong>👁️ Seer</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
+            <div><strong>🧑‍⚕️ Doctor</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
+        </div>
+        <div style="text-align:right; margin-top:20px;">
+            <button id="btn-close-rules" class="btn btn-primary">Got it!</button>
+        </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // ---------- Eager Firebase Imports ----------
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signInAnonymously, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, collection, setDoc, getDoc, runTransaction, onSnapshot, deleteField, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    // ---------- UI Helpers ----------
+    const screens = document.querySelectorAll('.screen');
+    function showScreen(id){ screens.forEach(s => s.classList.toggle('active', s.id === id)); }
+    const loadingOverlay = document.getElementById('loading-overlay');
+    function setLoading(on){ loadingOverlay.classList.toggle('active', on); }
+    function showToast(msg, err=false){
+      const t = document.getElementById('notification-toast');
+      t.textContent = msg;
+      t.style.background = err ? 'linear-gradient(90deg,#ef4444,#f97316)' : 'linear-gradient(90deg,#10b981,#06b6d4)';
+      t.classList.add('show');
+      setTimeout(()=> t.classList.remove('show'), 3000);
+    }
+
+    // ---------- Firebase Initialization ----------
+    let auth = null;
+    let db = null;
+    const firebaseConfig = {
+      apiKey: "AIzaSyCsPjYivo2bQp-fsr5wcdBfTRIiAcSbJNo",
+      authDomain: "who-s-wolf.firebaseapp.com",
+      projectId: "who-s-wolf",
+      storageBucket: "who-s-wolf.appspot.com",
+      messagingSenderId: "981640498887",
+      appId: "1:981640498887:web:92e582b23c6588d48a78e2",
+    };
+
+    function initializeFirebase() {
+        try {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            handleAuthentication();
+        } catch(e) {
+            console.error("Firebase Init Error:", e);
+            showToast('Gagal menginisialisasi aplikasi.', true);
+        }
+    }
+
+    // ---------- Auth & User Profile Logic ----------
+    let currentUser = null;
+    
+    async function handleAuthentication() {
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in (anonymously or otherwise)
+                currentUser = { uid: user.uid, displayName: user.displayName };
+                if (user.displayName) {
+                    // If user already has a nickname, go to lobby
+                    document.getElementById('welcome-text').textContent = user.displayName;
+                    showScreen('lobby-screen');
+                } else {
+                    // If new anonymous user, ask for a nickname
+                    showScreen('nickname-screen');
+                }
+                setLoading(false);
+            } else {
+                // If no user, sign in anonymously
+                try {
+                    await signInAnonymously(auth);
+                    // onAuthStateChanged will run again after this, so we don't need to do anything else
+                } catch (error) {
+                    console.error("Anonymous Sign In Error:", error);
+                    showToast('Gagal terhubung ke server.', true);
+                }
+            }
+        });
+    }
+
+    document.getElementById('btn-enter-lobby').addEventListener('click', async () => {
+        const nickInput = document.getElementById('nickname-input');
+        const nickname = nickInput.value.trim();
+        if (!nickname) {
+            showToast('Nickname tidak boleh kosong!', true);
+            return;
+        }
+
+        const btn = document.getElementById('btn-enter-lobby');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner"></div>';
+
+        try {
+            await updateProfile(auth.currentUser, { displayName: nickname });
+            currentUser.displayName = nickname;
+            document.getElementById('welcome-text').textContent = nickname;
+            showScreen('lobby-screen');
+        } catch (error) {
+            console.error("Update Profile Error:", error);
+            showToast('Gagal menyimpan nickname.', true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Masuk Lobby';
+        }
+    });
+
+    // ---------- Room Flow & Logic ----------
+    let currentRoomId = null;
+    let roomUnsub = null;
+
+    function setLobbyView(inRoom) {
+        document.getElementById('pre-room-view').classList.toggle('hidden', inRoom);
+        document.getElementById('in-room-view').classList.toggle('hidden', !inRoom);
+    }
+
+    async function createRoom(){
+      const createBtn = document.getElementById('btn-create-room');
+      const createBtnText = document.getElementById('create-room-text');
+      createBtn.disabled = true;
+      createBtnText.style.display = 'none';
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      createBtn.appendChild(spinner);
+      
+      try {
+        const code = Math.random().toString(36).substring(2,8).toUpperCase();
+        const roomRef = doc(collection(db,'rooms'), code);
+        
+        const hostData = { 
+            nickname: currentUser.displayName, 
+            isHost: true 
+        };
+        
+        const initialPlayers = { [currentUser.uid]: hostData };
+
+        await setDoc(roomRef, { 
+            hostId: currentUser.uid, 
+            players: initialPlayers, 
+            settings: getSettingsFromUI(), 
+            gameState: 'lobby' 
+        });
+        
+        currentRoomId = code;
+        window.history.replaceState({}, '', '?room=' + code);
+        subscribeToRoom(code);
+        showToast('Room created: ' + code);
+
+      } catch(e){
+        console.error("Create Room Error:", e);
+        showToast('Gagal membuat room. Coba lagi.', true);
+      } finally {
+        createBtn.disabled = false;
+        createBtn.removeChild(spinner);
+        createBtnText.style.display = 'inline';
+      }
+    }
+
+    async function joinRoom(code){
+      setLoading(true);
+      try {
+        const roomRef = doc(db, "rooms", code);
+
+        await runTransaction(db, async (transaction) => {
+            const roomDoc = await transaction.get(roomRef);
+            if (!roomDoc.exists()) {
+                throw "Room tidak ditemukan!";
+            }
+            const roomData = roomDoc.data();
+            if (roomData.gameState !== 'lobby') {
+                throw "Game sudah dimulai atau selesai!";
+            }
+            
+            const newPlayerData = {
+                nickname: currentUser.displayName,
+                isHost: false
+            };
+            transaction.update(roomRef, { [`players.${currentUser.uid}`]: newPlayerData });
+        });
+
+        currentRoomId = code;
+        window.history.replaceState({}, '', '?room=' + code);
+        subscribeToRoom(code);
+        showToast('Joined ' + code);
+
+      } catch (error) {
+          console.error("Join Room Error:", error);
+          showToast(`Gagal bergabung: ${error}`, true);
+      } finally {
+          setLoading(false);
+      }
+    }
+
+    function subscribeToRoom(code){
+      if(roomUnsub) roomUnsub();
+      const roomRef = doc(db, 'rooms', code);
+      roomUnsub = onSnapshot(roomRef, snap => {
+        if(!snap.exists()){
+          showToast('Room ditutup oleh host.', true);
+          leaveRoom(false);
+          return;
+        }
+        renderInRoomView(snap.data());
+      }, err => {
+        console.error("Room subscription error:", err);
+        showToast('Koneksi ke room terputus.', true);
+      });
+    }
+
+    async function leaveRoom(updateDb = true){
+      if(roomUnsub){ roomUnsub(); roomUnsub = null; }
+      
+      if(updateDb && currentRoomId){
+        const roomRef = doc(db, "rooms", currentRoomId);
+        try {
+            await runTransaction(db, async (transaction) => {
+                const roomDoc = await transaction.get(roomRef);
+                if (!roomDoc.exists()) return;
+
+                const data = roomDoc.data();
+                const newPlayers = { ...data.players };
+                delete newPlayers[currentUser.uid];
+
+                // This logic automatically deletes the room if the host leaves
+                // or if the room becomes empty, preventing old data buildup.
+                if (data.hostId === currentUser.uid || Object.keys(newPlayers).length === 0) {
+                    transaction.delete(roomRef);
+                } else {
+                    transaction.update(roomRef, { [`players.${currentUser.uid}`]: deleteField() });
+                }
+            });
+        } catch(e){ console.error('Leave Room Error:', e); }
+      }
+      currentRoomId = null;
+      window.history.replaceState({}, '', location.pathname);
+      setLobbyView(false);
+    }
+
+    function renderInRoomView(roomData){
+      setLobbyView(true);
+      document.getElementById('room-code-display').textContent = currentRoomId || '----';
+
+      const list = document.getElementById('player-list');
+      list.innerHTML = '';
+      const players = roomData.players || {};
+      const playerIds = Object.keys(players);
+      document.getElementById('player-count').textContent = playerIds.length;
+      
+      playerIds.forEach(pid => {
+        const p = players[pid];
+        const el = document.createElement('div');
+        el.className = 'flex justify-between items-center p-2 rounded-lg mb-2';
+        el.innerHTML = `<div><strong>${p.nickname} ${p.isHost ? '👑' : ''}</strong></div>`;
+        list.appendChild(el);
+      });
+
+      const isHost = roomData.hostId === currentUser.uid;
+      document.getElementById('room-settings-panel').style.display = isHost ? 'block' : 'none';
+      document.getElementById('btn-start').classList.toggle('hidden', !isHost || playerIds.length < 3);
+      
+      if (!isHost && roomData.settings) {
+        updateSettingsUI(roomData.settings, true);
+      } else {
+        updateSettingsUI(roomData.settings || getSettingsFromUI(), false);
+      }
+    }
+    
+    // ---------- Settings Management ----------
+    function getSettingsFromUI() {
+        return {
+            numWerewolves: parseInt(document.getElementById('setting-wolves').value || 1),
+            includeSeer: document.getElementById('setting-seer').checked,
+            includeDoctor: document.getElementById('setting-doctor').checked,
+            dayDuration: parseInt(document.getElementById('setting-day').value || 60),
+            nightDuration: parseInt(document.getElementById('setting-night').value || 45)
+        };
+    }
+    function updateSettingsUI(settings, disableInputs) {
+        document.getElementById('setting-wolves').value = settings.numWerewolves;
+        document.getElementById('setting-seer').checked = settings.includeSeer;
+        document.getElementById('setting-doctor').checked = settings.includeDoctor;
+        document.getElementById('setting-day').value = settings.dayDuration;
+        document.getElementById('setting-night').value = settings.nightDuration;
+        document.querySelectorAll('.setting-input').forEach(input => input.disabled = disableInputs);
+    }
+    
+    async function updateSettingsInDb() {
+        if (!currentRoomId || !currentUser) return;
+        const roomRef = doc(db,'rooms', currentRoomId);
+        try {
+            const snap = await getDoc(roomRef);
+            if (snap.exists() && snap.data().hostId === currentUser.uid) {
+                await updateDoc(roomRef, { settings: getSettingsFromUI() });
+            }
+        } catch (e) {
+            console.error("Update Settings Error:", e);
+            showToast("Gagal menyimpan pengaturan.", true);
+        }
+    }
+    
+    // ---------- Event Listeners ----------
+    document.getElementById('btn-create-room').addEventListener('click', createRoom);
+    document.getElementById('btn-join').addEventListener('click', ()=>{
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      if(!code){ showToast('Masukkan kode room', true); return; }
+      joinRoom(code);
+    });
+    document.getElementById('btn-leave').addEventListener('click', ()=>leaveRoom());
+    document.querySelectorAll('.setting-input').forEach(input => input.addEventListener('change', updateSettingsInDb));
+
+    const rulesModal = document.getElementById('rules-modal-backdrop');
+    document.getElementById('btn-how-to-play').addEventListener('click', () => rulesModal.classList.add('active'));
+    document.getElementById('btn-close-rules').addEventListener('click', () => rulesModal.classList.remove('active'));
+
+    // ---------- Initialization ----------
+    (function init(){
+      initializeFirebase();
+      const params = new URLSearchParams(location.search);
+      const roomCode = params.get('room');
+      if (roomCode) {
+        document.getElementById('join-code').value = roomCode.toUpperCase();
+      }
+    })();
+  </script>
+</body>
+</html>
+
