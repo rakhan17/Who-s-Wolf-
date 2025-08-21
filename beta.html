@@ -8,37 +8,41 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#0b1220; --muted:#9ca3af; --card:rgba(255,255,255,0.02); }
+    :root { --bg:#0b1220; --muted:#9ca3af; --card:rgba(255,255,255,0.02); --border:rgba(148,163,184,0.08); }
     html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8;font-family:'Poppins',system-ui,Segoe UI,Roboto; overflow: hidden;}
     
-    .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:28px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
+    .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:16px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
 
-    .card{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));border-radius:14px;padding:24px;border:1px solid rgba(148,163,184,0.04);box-shadow:0 8px 24px rgba(2,6,23,0.6)}
+    .card{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));border-radius:14px;padding:24px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(2,6,23,0.6)}
     .muted{color:var(--muted)}
     .input-wrapper{position:relative;width:100%;}
     .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
-    input.input-field{width:100%;padding:12px 14px 12px 44px;border-radius:12px;background:transparent;border:1px solid rgba(148,163,184,0.06);color:#e6eef8;outline:none}
-    input.input-field::placeholder{color:#94a3b8}
+    input.input-field{width:100%;padding:12px 14px;border-radius:12px;background:transparent;border:1px solid var(--border);color:#e6eef8;outline:none}
+    input.input-field.has-icon { padding-left: 44px; }
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;padding:.7rem 1rem;border-radius:12px;font-weight:700;cursor:pointer;border:0; transition: all 0.2s ease;}
     .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     .btn:disabled{opacity:.6;cursor:not-allowed}
     .btn-primary{background:linear-gradient(90deg,#7c3aed,#4f46e5);color:white}
     .btn-secondary{background:#1f2937;color:#cbd5e1}
+    .btn-danger{background:linear-gradient(90deg,#ef4444,#b91c1c);color:white}
     .btn-green{background:linear-gradient(90deg,#10b981,#06b6d4);color:white}
     .spinner{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);border-top-color:white;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;z-index:50; opacity: 0; transition: opacity 0.3s ease;}
-    .modal{position:fixed;z-index:60;left:50%;top:50%;transform:translate(-50%, -50%) scale(0.95);min-width:280px;max-width:420px; opacity: 0; transition: all 0.3s ease;}
-    .modal-backdrop.active { display:block; opacity: 1; }
-    .modal-backdrop.active .modal { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:50; opacity: 0; transition: opacity 0.3s ease; pointer-events:none;}
+    .modal{min-width:280px;max-width:420px; opacity: 0; transform: scale(0.95); transition: all 0.3s ease;}
+    .modal-backdrop.active { opacity: 1; pointer-events:auto; }
+    .modal-backdrop.active .modal { opacity: 1; transform: scale(1); }
 
     #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
     #notification-toast.show { opacity: 1; top: 30px; }
     
     .screen * { box-sizing:border-box }
     .hidden { display: none !important; }
+
+    .shimmer-tag { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: linear-gradient(270deg, #ff2d2d, #ff7b7b, #ff2d2d); background-size: 200% 200%; animation: shimmer 2s ease infinite; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
   </style>
 </head>
 <body>
@@ -51,7 +55,7 @@
       <div style="font-size:56px">🐺</div>
       <h1 style="font-size:26px;margin:6px 0; color:white;">Who's Wolf?</h1>
       <div class="spinner" style="width:32px; height:32px; border-width:3px; margin: 20px auto 12px auto;"></div>
-      <div class="muted">Menghubungkan...</div>
+      <div class="muted">Connecting...</div>
     </div>
   </div>
 
@@ -59,11 +63,11 @@
   <div id="nickname-screen" class="screen" style="z-index:10">
     <div class="card" style="width:100%;max-width:420px;text-align:center">
       <div style="font-size:56px">🐺</div>
-      <h1 style="font-size:26px;margin:6px 0">Selamat Datang!</h1>
-      <p class="muted">Masukkan nama panggilan untuk bermain</p>
+      <h1 style="font-size:26px;margin:6px 0">Welcome!</h1>
+      <p class="muted">Enter your nickname to play</p>
       <div style="margin-top:16px;">
-        <div class="input-wrapper" style="margin-bottom:12px"><span class="input-icon">🙍</span><input id="nickname-input" class="input-field" placeholder="Nickname Anda" maxlength="15"></div>
-        <button id="btn-enter-lobby" class="btn btn-primary" style="width:100%">Masuk Lobby</button>
+        <div class="input-wrapper" style="margin-bottom:12px"><span class="input-icon">🙍</span><input id="nickname-input" class="input-field has-icon" placeholder="Your Nickname" maxlength="25"></div>
+        <button id="btn-enter-lobby" class="btn btn-primary" style="width:100%">Enter Lobby</button>
       </div>
     </div>
   </div>
@@ -72,14 +76,17 @@
   <div id="lobby-screen" class="screen" style="z-index:15">
     <div class="card" style="width:100%;max-width:900px">
       <!-- Header -->
-      <div style="display:flex;justify-content:space-between;align-items:center; padding-bottom: 16px; border-bottom: 1px solid rgba(148,163,184,0.06);">
+      <div style="display:flex;justify-content:space-between;align-items:center; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
         <div style="display:flex; align-items:center; gap:12px;">
             <div style="font-size:32px">🐺</div>
             <h2 style="margin:0; font-size:22px;">Who's Wolf?</h2>
         </div>
         <div style="display:flex; align-items:center; gap:16px;">
           <div id="welcome-container" style="text-align:right;">
-            <h2 id="welcome-text" style="margin:0; font-size:18px;">Welcome</h2>
+            <div class="flex items-center gap-2">
+              <h2 id="welcome-text" style="margin:0; font-size:18px;">Welcome</h2>
+              <button id="btn-edit-name" class="text-sm">✏️</button>
+            </div>
             <p class="muted" id="welcome-sub" style="margin:0; font-size:12px;">Ready to hunt?</p>
           </div>
           <button id="btn-how-to-play" class="btn btn-secondary">How to Play</button>
@@ -90,19 +97,15 @@
       <div id="pre-room-view" style="margin-top:24px; display:flex; flex-direction:column; align-items:center; gap: 24px;">
         <div style="text-align:center; width:100%; max-width:320px;">
           <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Create a New Room</h3>
-          <button id="btn-create-room" class="btn btn-primary" style="width:100%;">
-            <span id="create-room-text">Create Room</span>
-          </button>
+          <button id="btn-create-room" class="btn btn-primary" style="width:100%;">Create Room</button>
         </div>
         <div style="display:flex; align-items:center; gap:12px; width:100%; max-width: 320px; color: var(--muted);">
-          <hr style="flex:1; border:0; border-top: 1px solid rgba(148,163,184,0.1);">
-          <span>OR</span>
-          <hr style="flex:1; border:0; border-top: 1px solid rgba(148,163,184,0.1);">
+          <hr style="flex:1; border:0; border-top: 1px solid var(--border);"><span class="text-sm">OR</span><hr style="flex:1; border:0; border-top: 1px solid var(--border);">
         </div>
         <div style="text-align:center; width:100%; max-width:320px;">
           <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Join an Existing Room</h3>
           <div style="display:flex;gap:8px;">
-            <input id="join-code" class="input-field" placeholder="ROOM CODE" style="flex:1;padding-left:12px"/>
+            <input id="join-code" class="input-field" placeholder="ROOM CODE" style="flex:1; text-transform:uppercase;"/>
             <button id="btn-join" class="btn btn-green">Join</button>
           </div>
         </div>
@@ -111,7 +114,7 @@
       <!-- In-Room View -->
       <div id="in-room-view" class="hidden" style="margin-top:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0">Room Code: <span id="room-code-display" style="color:#7c3aed; font-weight:700;"></span></h3>
+            <h3 style="margin:0">Room Code: <span id="room-code-display" style="color:#7c3aed; font-weight:700; cursor:pointer;"></span></h3>
             <button id="btn-leave" class="btn btn-secondary">Leave Room</button>
         </div>
         <div style="display:flex;gap:16px">
@@ -126,9 +129,10 @@
               <h3 style="margin:0 0 8px 0">Room Settings</h3>
               <label class="muted" style="font-size:13px">Werewolves</label>
               <input id="setting-wolves" type="number" min="1" value="1" class="input-field setting-input" style="margin-bottom:8px"/>
-              <div style="display:flex;gap:8px">
-                <label class="muted" style="flex:1"><input id="setting-seer" type="checkbox" checked class="setting-input"/> Seer</label>
-                <label class="muted" style="flex:1"><input id="setting-doctor" type="checkbox" checked class="setting-input"/> Doctor</label>
+              <div style="display:flex;gap:8px; flex-wrap: wrap;">
+                <label class="muted" style="flex:1 0 45%"><input id="setting-seer" type="checkbox" checked class="setting-input"/> Seer</label>
+                <label class="muted" style="flex:1 0 45%"><input id="setting-doctor" type="checkbox" checked class="setting-input"/> Doctor</label>
+                <label class="muted" style="flex:1 0 45%"><input id="setting-hunter" type="checkbox" class="setting-input"/> Hunter</label>
               </div>
               <div style="height:8px"></div>
               <div style="display:flex;gap:8px">
@@ -142,10 +146,85 @@
       </div>
     </div>
   </div>
-  
+
+  <!-- GAME screen -->
+  <div id="game-screen" class="screen" style="z-index:20; display:flex; flex-direction:column; gap:16px; padding:16px;">
+    <!-- Game Header -->
+    <div class="card" style="width:100%; padding:12px 24px; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2 id="game-phase-title" style="margin:0; font-size:22px;">Night 1</h2>
+        <p id="game-phase-subtitle" class="muted" style="margin:0; font-size:14px;">The village is asleep...</p>
+      </div>
+      <div style="text-align:center;">
+        <div id="game-timer" style="font-size:28px; font-weight:700;">00:45</div>
+        <div class="muted" style="font-size:12px;">TIME REMAINING</div>
+      </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div style="width:100%; flex:1; display:flex; gap:16px; overflow:hidden;">
+      <!-- Left Panel (Players & Dev Tools) -->
+      <div style="display:flex; flex-direction:column; gap:16px; width:280px;">
+        <div class="card" style="padding:16px; flex:1; display:flex; flex-direction:column;">
+          <h3 style="margin:0 0 8px 0;">Players</h3>
+          <div id="game-player-list" style="overflow-y:auto; flex:1;"></div>
+        </div>
+        <div id="developer-panel" class="card hidden" style="padding:16px;">
+          <h4 style="margin:0 0 8px 0; color:#ff5555;">Developer Tools</h4>
+          <p class="muted text-xs">Use with caution!</p>
+          <button id="dev-end-game" class="btn btn-secondary w-full text-xs">End Game</button>
+        </div>
+      </div>
+
+      <!-- Center Panel (Main content) -->
+      <div id="game-main-content" class="card" style="padding:16px; flex:1; overflow-y: auto;">
+        <!-- Player cards will be dynamically inserted here -->
+      </div>
+
+      <!-- Right Panel (Chat) -->
+      <div class="card" style="padding:16px; width:320px; display:flex; flex-direction:column;">
+        <h3 style="margin:0 0 8px 0;">Global Chat</h3>
+        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:8px; font-size:14px;"></div>
+        <div style="display:flex; gap:8px;">
+          <input id="chat-input" class="input-field" style="flex:1;" placeholder="Type a message..." disabled/>
+          <button id="chat-send" class="btn btn-primary" disabled>Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Reveal Modal -->
+  <div id="role-reveal-modal" class="modal-backdrop">
+    <div class="modal card" style="text-align:center;">
+      <div id="role-reveal-emoji" style="font-size:80px; margin-bottom:12px;"></div>
+      <h1 id="role-reveal-name" style="font-size:28px; margin:0;"></h1>
+      <p id="role-reveal-description" class="muted" style="margin-top:8px;"></p>
+      <div id="role-reveal-allies" class="mt-4"></div>
+      <button id="btn-close-role-reveal" class="btn btn-primary" style="width:100%; margin-top:24px;">Continue</button>
+    </div>
+  </div>
+
+  <!-- Event Announcement Modal -->
+  <div id="event-modal" class="modal-backdrop">
+    <div class="modal card" style="text-align:center;">
+        <h1 id="event-title" style="font-size:28px; margin:0;"></h1>
+        <div id="event-body" class="muted" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div id="game-over-modal" class="modal-backdrop">
+    <div class="modal card" style="text-align:center;">
+      <h1 id="game-over-title" style="font-size:28px; margin:0;"></h1>
+      <p id="game-over-reason" class="muted" style="margin-top:8px;"></p>
+      <div id="game-over-roles" style="margin-top:16px; text-align:left;"></div>
+      <button id="btn-back-to-lobby" class="btn btn-primary" style="width:100%; margin-top:24px;">Back to Lobby</button>
+    </div>
+  </div>
+
   <!-- How to Play Modal -->
   <div id="rules-modal-backdrop" class="modal-backdrop">
-    <div id="rules-modal" class="modal card">
+    <div class="modal card">
         <h2 style="margin-top:0">How to Play Who's Wolf</h2>
         <p class="muted">The game is divided into two phases: Night and Day. The goal of the Villagers is to eliminate all Werewolves. The goal of the Werewolves is to outnumber the Villagers.</p>
         <h3 style="margin-bottom:8px;">Roles</h3>
@@ -154,6 +233,7 @@
             <div><strong>👱 Villager</strong><p class="muted" style="font-size:14px;">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
             <div><strong>👁️ Seer</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
             <div><strong>🧑‍⚕️ Doctor</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
+            <div><strong>🎯 Hunter</strong><p class="muted" style="font-size:14px;">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
         </div>
         <div style="text-align:right; margin-top:20px;">
             <button id="btn-close-rules" class="btn btn-primary">Got it!</button>
@@ -165,7 +245,7 @@
     // ---------- Eager Firebase Imports ----------
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged, signInAnonymously, updateProfile } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, collection, setDoc, getDoc, runTransaction, onSnapshot, deleteField, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    import { getFirestore, doc, collection, setDoc, getDoc, runTransaction, onSnapshot, deleteField, updateDoc, deleteDoc, serverTimestamp, query, orderBy, addDoc, where, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     // ---------- UI Helpers ----------
     const screens = document.querySelectorAll('.screen');
@@ -179,10 +259,12 @@
       t.classList.add('show');
       setTimeout(()=> t.classList.remove('show'), 3000);
     }
+    function showModal(id, show) {
+        document.getElementById(id)?.classList.toggle('active', show);
+    }
 
     // ---------- Firebase Initialization ----------
-    let auth = null;
-    let db = null;
+    let auth, db;
     const firebaseConfig = {
       apiKey: "AIzaSyCsPjYivo2bQp-fsr5wcdBfTRIiAcSbJNo",
       authDomain: "who-s-wolf.firebaseapp.com",
@@ -200,114 +282,148 @@
             handleAuthentication();
         } catch(e) {
             console.error("Firebase Init Error:", e);
-            showToast('Gagal menginisialisasi aplikasi.', true);
+            showToast('Failed to initialize application.', true);
         }
     }
 
     // ---------- Auth & User Profile Logic ----------
     let currentUser = null;
+    const DEV_PREFIX = "[slnana]";
     
     async function handleAuthentication() {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // User is signed in (anonymously or otherwise)
-                currentUser = { uid: user.uid, displayName: user.displayName };
+                const isDev = user.displayName?.toLowerCase().startsWith(DEV_PREFIX) || false;
+                currentUser = { 
+                    uid: user.uid, 
+                    displayName: user.displayName,
+                    isDeveloper: isDev
+                };
                 if (user.displayName) {
-                    // If user already has a nickname, go to lobby
-                    document.getElementById('welcome-text').textContent = user.displayName;
+                    updateWelcomeText(user.displayName);
                     showScreen('lobby-screen');
                 } else {
-                    // If new anonymous user, ask for a nickname
                     showScreen('nickname-screen');
                 }
                 setLoading(false);
             } else {
-                // If no user, sign in anonymously
                 try {
                     await signInAnonymously(auth);
-                    // onAuthStateChanged will run again after this, so we don't need to do anything else
                 } catch (error) {
                     console.error("Anonymous Sign In Error:", error);
-                    showToast('Gagal terhubung ke server.', true);
+                    showToast('Failed to connect to server.', true);
                 }
             }
         });
     }
-
-    document.getElementById('btn-enter-lobby').addEventListener('click', async () => {
-        const nickInput = document.getElementById('nickname-input');
-        const nickname = nickInput.value.trim();
-        if (!nickname) {
-            showToast('Nickname tidak boleh kosong!', true);
-            return;
+    
+    function updateWelcomeText(name) {
+        const isDev = name.toLowerCase().startsWith(DEV_PREFIX);
+        const displayName = isDev ? name.substring(DEV_PREFIX.length).trim() : name;
+        const welcomeTextEl = document.getElementById('welcome-text');
+        welcomeTextEl.textContent = displayName;
+        if (isDev) {
+            const devTag = document.createElement('span');
+            devTag.className = 'shimmer-tag ml-2';
+            devTag.textContent = 'Developer';
+            welcomeTextEl.appendChild(devTag);
         }
+    }
 
-        const btn = document.getElementById('btn-enter-lobby');
-        btn.disabled = true;
-        btn.innerHTML = '<div class="spinner"></div>';
-
+    async function setNickname(nickname) {
+        if (!nickname) {
+            showToast('Nickname cannot be empty!', true);
+            return false;
+        }
+        setLoading(true);
         try {
             await updateProfile(auth.currentUser, { displayName: nickname });
             currentUser.displayName = nickname;
-            document.getElementById('welcome-text').textContent = nickname;
+            currentUser.isDeveloper = nickname.toLowerCase().startsWith(DEV_PREFIX);
+            updateWelcomeText(nickname);
             showScreen('lobby-screen');
+            return true;
         } catch (error) {
             console.error("Update Profile Error:", error);
-            showToast('Gagal menyimpan nickname.', true);
+            showToast('Failed to save nickname.', true);
+            return false;
         } finally {
-            btn.disabled = false;
-            btn.textContent = 'Masuk Lobby';
+            setLoading(false);
         }
+    }
+
+    document.getElementById('btn-enter-lobby').addEventListener('click', () => {
+        setNickname(document.getElementById('nickname-input').value.trim());
     });
+
+    document.getElementById('btn-edit-name').addEventListener('click', () => {
+        const newName = prompt("Enter new nickname:", currentUser.displayName);
+        if (newName) setNickname(newName.trim());
+    });
+
 
     // ---------- Room Flow & Logic ----------
     let currentRoomId = null;
     let roomUnsub = null;
+    let chatUnsub = null;
+    let gameTimerInterval = null;
+    let presenceInterval = null;
 
     function setLobbyView(inRoom) {
         document.getElementById('pre-room-view').classList.toggle('hidden', inRoom);
         document.getElementById('in-room-view').classList.toggle('hidden', !inRoom);
     }
+    
+    function startPresenceUpdates() {
+        if (presenceInterval) clearInterval(presenceInterval);
+        presenceInterval = setInterval(async () => {
+            if (currentRoomId && currentUser && db) {
+                const roomRef = doc(db, 'rooms', currentRoomId);
+                try {
+                    await updateDoc(roomRef, {
+                        [`players.${currentUser.uid}.lastSeen`]: serverTimestamp()
+                    });
+                } catch (e) { /* Fail silently */ }
+            }
+        }, 15000);
+    }
+
+    function stopPresenceUpdates() {
+        if (presenceInterval) clearInterval(presenceInterval);
+        presenceInterval = null;
+    }
 
     async function createRoom(){
-      const createBtn = document.getElementById('btn-create-room');
-      const createBtnText = document.getElementById('create-room-text');
-      createBtn.disabled = true;
-      createBtnText.style.display = 'none';
-      const spinner = document.createElement('div');
-      spinner.className = 'spinner';
-      createBtn.appendChild(spinner);
-      
+      setLoading(true);
       try {
         const code = Math.random().toString(36).substring(2,8).toUpperCase();
-        const roomRef = doc(collection(db,'rooms'), code);
+        const roomRef = doc(db, 'rooms', code);
         
         const hostData = { 
             nickname: currentUser.displayName, 
-            isHost: true 
+            isHost: true,
+            isDeveloper: currentUser.isDeveloper,
+            lastSeen: serverTimestamp()
         };
         
-        const initialPlayers = { [currentUser.uid]: hostData };
-
         await setDoc(roomRef, { 
             hostId: currentUser.uid, 
-            players: initialPlayers, 
+            players: { [currentUser.uid]: hostData }, 
             settings: getSettingsFromUI(), 
-            gameState: 'lobby' 
+            state: 'lobby',
+            createdAt: serverTimestamp()
         });
         
         currentRoomId = code;
-        window.history.replaceState({}, '', '?room=' + code);
+        try { window.history.replaceState({}, '', '?room=' + code); } catch (e) { console.warn("Could not update URL:", e); }
         subscribeToRoom(code);
         showToast('Room created: ' + code);
 
       } catch(e){
         console.error("Create Room Error:", e);
-        showToast('Gagal membuat room. Coba lagi.', true);
+        showToast('Failed to create room. Check Firestore rules.', true);
       } finally {
-        createBtn.disabled = false;
-        createBtn.removeChild(spinner);
-        createBtnText.style.display = 'inline';
+        setLoading(false);
       }
     }
 
@@ -315,32 +431,28 @@
       setLoading(true);
       try {
         const roomRef = doc(db, "rooms", code);
-
         await runTransaction(db, async (transaction) => {
             const roomDoc = await transaction.get(roomRef);
-            if (!roomDoc.exists()) {
-                throw "Room tidak ditemukan!";
-            }
+            if (!roomDoc.exists()) throw new Error("Room not found!");
             const roomData = roomDoc.data();
-            if (roomData.gameState !== 'lobby') {
-                throw "Game sudah dimulai atau selesai!";
-            }
+            if (roomData.state !== 'lobby') throw new Error("Game has already started!");
             
             const newPlayerData = {
                 nickname: currentUser.displayName,
-                isHost: false
+                isHost: false,
+                isDeveloper: currentUser.isDeveloper,
+                lastSeen: serverTimestamp()
             };
             transaction.update(roomRef, { [`players.${currentUser.uid}`]: newPlayerData });
         });
 
         currentRoomId = code;
-        window.history.replaceState({}, '', '?room=' + code);
+        try { window.history.replaceState({}, '', '?room=' + code); } catch (e) { console.warn("Could not update URL:", e); }
         subscribeToRoom(code);
         showToast('Joined ' + code);
-
       } catch (error) {
           console.error("Join Room Error:", error);
-          showToast(`Gagal bergabung: ${error}`, true);
+          showToast(`Failed to join: ${error.message}`, true);
       } finally {
           setLoading(false);
       }
@@ -348,52 +460,128 @@
 
     function subscribeToRoom(code){
       if(roomUnsub) roomUnsub();
+      startPresenceUpdates();
       const roomRef = doc(db, 'rooms', code);
       roomUnsub = onSnapshot(roomRef, snap => {
         if(!snap.exists()){
-          showToast('Room ditutup oleh host.', true);
-          leaveRoom(false);
+          showToast('Room closed by host.', true);
+          handleRoomClose();
           return;
         }
-        renderInRoomView(snap.data());
+        const roomData = snap.data();
+        
+        if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby') {
+            hostGameLogic(roomData);
+        }
+
+        if (roomData.state === 'lobby' && !roomData.players[currentUser.uid]) {
+            showToast("You were kicked from the room.", true);
+            handleRoomClose();
+            return;
+        }
+
+        switch(roomData.state) {
+            case 'lobby': showScreen('lobby-screen'); renderLobbyView(roomData); break;
+            case 'role_reveal': showScreen('game-screen'); renderRoleReveal(roomData); break;
+            case 'announcement': showScreen('game-screen'); renderAnnouncement(roomData); break;
+            case 'night': case 'day': showScreen('game-screen'); renderGamePhase(roomData); break;
+            case 'game_over': showScreen('game-screen'); renderGameOver(roomData); break;
+        }
       }, err => {
         console.error("Room subscription error:", err);
-        showToast('Koneksi ke room terputus.', true);
+        showToast('Connection to room lost.', true);
+        handleRoomClose();
       });
+      subscribeToChat(code);
+    }
+    
+    function subscribeToChat(code) {
+        if (chatUnsub) chatUnsub();
+        const chatRef = collection(db, 'rooms', code, 'messages');
+        const q = query(chatRef, orderBy('timestamp', 'asc'));
+        chatUnsub = onSnapshot(q, (snapshot) => {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            snapshot.forEach(doc => {
+                const msg = doc.data();
+                const msgEl = document.createElement('div');
+                
+                const isDev = msg.isDeveloper;
+                const displayName = isDev ? msg.nickname.substring(DEV_PREFIX.length).trim() : msg.nickname;
+
+                let nickHTML = `<strong>${displayName}</strong>`;
+                if(isDev) {
+                    nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
+                }
+
+                msgEl.innerHTML = `<p class="mb-1">${nickHTML}: ${msg.text}</p>`;
+                chatMessages.appendChild(msgEl);
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
     }
 
-    async function leaveRoom(updateDb = true){
-      if(roomUnsub){ roomUnsub(); roomUnsub = null; }
-      
-      if(updateDb && currentRoomId){
+    async function leaveRoom(){
+      if(currentRoomId){
         const roomRef = doc(db, "rooms", currentRoomId);
         try {
-            await runTransaction(db, async (transaction) => {
-                const roomDoc = await transaction.get(roomRef);
-                if (!roomDoc.exists()) return;
-
-                const data = roomDoc.data();
-                const newPlayers = { ...data.players };
-                delete newPlayers[currentUser.uid];
-
-                // This logic automatically deletes the room if the host leaves
-                // or if the room becomes empty, preventing old data buildup.
-                if (data.hostId === currentUser.uid || Object.keys(newPlayers).length === 0) {
-                    transaction.delete(roomRef);
+            const roomDoc = await getDoc(roomRef);
+            if (roomDoc.exists()) {
+                const roomData = roomDoc.data();
+                const isHost = roomData.hostId === currentUser.uid;
+                if (isHost || Object.keys(roomData.players).length <= 1) {
+                    await deleteDoc(roomRef);
                 } else {
-                    transaction.update(roomRef, { [`players.${currentUser.uid}`]: deleteField() });
+                    await updateDoc(roomRef, { [`players.${currentUser.uid}`]: deleteField() });
                 }
-            });
+            }
         } catch(e){ console.error('Leave Room Error:', e); }
       }
-      currentRoomId = null;
-      window.history.replaceState({}, '', location.pathname);
-      setLobbyView(false);
+      handleRoomClose();
+    }
+    
+    function handleRoomClose() {
+        if(roomUnsub){ roomUnsub(); roomUnsub = null; }
+        if(chatUnsub){ chatUnsub(); chatUnsub = null; }
+        stopPresenceUpdates();
+        currentRoomId = null;
+        if(gameTimerInterval) clearInterval(gameTimerInterval);
+        try { window.history.replaceState({}, '', location.pathname); } catch (e) { console.warn("Could not update URL:", e); }
+        setLobbyView(false);
+        showScreen('lobby-screen');
+    }
+    
+    async function kickPlayer(playerIdToKick) {
+        if (!currentRoomId) return;
+        const roomRef = doc(db, "rooms", currentRoomId);
+        try {
+            await updateDoc(roomRef, {
+                [`players.${playerIdToKick}`]: deleteField()
+            });
+            showToast("Player kicked successfully.");
+        } catch (e) {
+            console.error("Kick Player Error:", e);
+            showToast("Failed to kick player.", true);
+        }
     }
 
-    function renderInRoomView(roomData){
+    function renderLobbyView(roomData){
       setLobbyView(true);
-      document.getElementById('room-code-display').textContent = currentRoomId || '----';
+      const codeDisplay = document.getElementById('room-code-display');
+      codeDisplay.textContent = currentRoomId || '----';
+      codeDisplay.onclick = () => {
+          const tempInput = document.createElement('input');
+          document.body.appendChild(tempInput);
+          tempInput.value = currentRoomId;
+          tempInput.select();
+          try {
+              document.execCommand('copy');
+              showToast('Room code copied!');
+          } catch (err) {
+              showToast('Failed to copy code.', true);
+          }
+          document.body.removeChild(tempInput);
+      };
 
       const list = document.getElementById('player-list');
       list.innerHTML = '';
@@ -401,23 +589,52 @@
       const playerIds = Object.keys(players);
       document.getElementById('player-count').textContent = playerIds.length;
       
+      const isCurrentUserHost = roomData.hostId === currentUser.uid;
+
       playerIds.forEach(pid => {
         const p = players[pid];
         const el = document.createElement('div');
         el.className = 'flex justify-between items-center p-2 rounded-lg mb-2';
-        el.innerHTML = `<div><strong>${p.nickname} ${p.isHost ? '👑' : ''}</strong></div>`;
+        
+        const isDev = p.isDeveloper;
+        const displayName = isDev ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
+        
+        const isOnline = p.lastSeen && (Date.now() / 1000 - p.lastSeen.seconds < 30);
+        let onlineIndicatorHTML = '';
+        if (currentUser.isDeveloper && pid !== currentUser.uid) {
+            const color = isOnline ? '#22c55e' : '#6b7280';
+            onlineIndicatorHTML = `<span style="color: ${color}; font-size: 1.2em; margin-right: 8px;" title="${isOnline ? 'Online' : 'Offline'}">●</span>`;
+        }
+
+        let nickHTML = `<strong>${displayName} ${p.isHost ? '👑' : ''}</strong>`;
+        if(isDev) {
+            nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
+        }
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.innerHTML = onlineIndicatorHTML + nickHTML;
+        el.appendChild(nameDiv);
+
+        const canBeKicked = pid !== currentUser.uid && !p.isHost;
+        if ((isCurrentUserHost || currentUser.isDeveloper) && canBeKicked) {
+            const kickBtn = document.createElement('button');
+            kickBtn.textContent = 'Kick';
+            kickBtn.className = 'btn btn-danger text-xs px-2 py-1';
+            kickBtn.onclick = () => {
+                if(confirm(`Are you sure you want to kick ${displayName}?`)) {
+                    kickPlayer(pid);
+                }
+            };
+            el.appendChild(kickBtn);
+        }
+        
         list.appendChild(el);
       });
 
-      const isHost = roomData.hostId === currentUser.uid;
-      document.getElementById('room-settings-panel').style.display = isHost ? 'block' : 'none';
-      document.getElementById('btn-start').classList.toggle('hidden', !isHost || playerIds.length < 3);
+      document.getElementById('room-settings-panel').style.display = isCurrentUserHost ? 'block' : 'none';
+      document.getElementById('btn-start').classList.toggle('hidden', !isCurrentUserHost || playerIds.length < 3);
       
-      if (!isHost && roomData.settings) {
-        updateSettingsUI(roomData.settings, true);
-      } else {
-        updateSettingsUI(roomData.settings || getSettingsFromUI(), false);
-      }
+      updateSettingsUI(roomData.settings, !isCurrentUserHost);
     }
     
     // ---------- Settings Management ----------
@@ -426,21 +643,24 @@
             numWerewolves: parseInt(document.getElementById('setting-wolves').value || 1),
             includeSeer: document.getElementById('setting-seer').checked,
             includeDoctor: document.getElementById('setting-doctor').checked,
+            includeHunter: document.getElementById('setting-hunter').checked,
             dayDuration: parseInt(document.getElementById('setting-day').value || 60),
             nightDuration: parseInt(document.getElementById('setting-night').value || 45)
         };
     }
     function updateSettingsUI(settings, disableInputs) {
+        if (!settings) return;
         document.getElementById('setting-wolves').value = settings.numWerewolves;
         document.getElementById('setting-seer').checked = settings.includeSeer;
         document.getElementById('setting-doctor').checked = settings.includeDoctor;
+        document.getElementById('setting-hunter').checked = settings.includeHunter;
         document.getElementById('setting-day').value = settings.dayDuration;
         document.getElementById('setting-night').value = settings.nightDuration;
         document.querySelectorAll('.setting-input').forEach(input => input.disabled = disableInputs);
     }
     
     async function updateSettingsInDb() {
-        if (!currentRoomId || !currentUser) return;
+        if (!currentRoomId || !currentUser.uid) return;
         const roomRef = doc(db,'rooms', currentRoomId);
         try {
             const snap = await getDoc(roomRef);
@@ -449,19 +669,499 @@
             }
         } catch (e) {
             console.error("Update Settings Error:", e);
-            showToast("Gagal menyimpan pengaturan.", true);
+            showToast("Failed to save settings.", true);
+        }
+    }
+
+    // ---------- GAME LOGIC ----------
+
+    async function hostGameLogic(roomData) {
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        const { state, players, phaseEndTime } = roomData;
+
+        if (state === 'role_reveal') {
+            const allReady = Object.values(players).every(p => p.ready);
+            if (allReady) {
+                const endTime = Timestamp.fromMillis(Date.now() + roomData.settings.nightDuration * 1000);
+                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
+            }
+            return;
+        }
+
+        if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
+            setLoading(true);
+            let nextState = {};
+            if (state === 'night') {
+                nextState = processNightActions(roomData);
+            } else {
+                nextState = processDayVotes(roomData);
+            }
+            
+            const winState = checkWinCondition(nextState.players || players);
+            if (winState) {
+                await updateDoc(roomRef, { state: 'game_over', gameOver: winState });
+            } else {
+                await updateDoc(roomRef, nextState);
+            }
+            setLoading(false);
         }
     }
     
+    function processNightActions(roomData) {
+        let { players, turn, settings } = roomData;
+        let events = [];
+        const wolfVotes = {};
+        let doctorSaveTarget = null;
+        let hunterShotTarget = null;
+
+        Object.entries(players).forEach(([pid, p]) => {
+            if (p.isAlive && p.actionTarget) {
+                if (p.role === 'werewolf') {
+                    const target = p.actionTarget;
+                    wolfVotes[target] = (wolfVotes[target] || 0) + 1;
+                } else if (p.role === 'doctor') {
+                    doctorSaveTarget = p.actionTarget;
+                } else if (p.role === 'hunter' && !p.hasUsedAbility) {
+                    hunterShotTarget = p.actionTarget;
+                    players[pid].hasUsedAbility = true;
+                }
+            }
+        });
+
+        let killedByWolvesId = null;
+        if (Object.keys(wolfVotes).length > 0) {
+            killedByWolvesId = Object.keys(wolfVotes).reduce((a, b) => wolfVotes[a] > wolfVotes[b] ? a : b);
+        }
+
+        const deaths = new Set();
+        if (killedByWolvesId && killedByWolvesId !== doctorSaveTarget) {
+            deaths.add(killedByWolvesId);
+        }
+        if (hunterShotTarget && hunterShotTarget !== doctorSaveTarget) {
+            deaths.add(hunterShotTarget);
+        }
+
+        if (deaths.size > 0) {
+            deaths.forEach(pid => {
+                players[pid].isAlive = false;
+                events.push(`${players[pid].nickname} was found dead.`);
+            });
+        } else {
+            events.push("The night was quiet... No one died.");
+        }
+
+        return {
+            state: 'announcement',
+            phase: 'day',
+            players: players,
+            announcement: { title: `Night ${turn} ended`, events: events },
+        };
+    }
+
+    function processDayVotes(roomData) {
+        let { players, turn } = roomData;
+        let events = [];
+        const votes = {};
+
+        Object.values(players).forEach(p => {
+            if (p.isAlive && p.votedFor) {
+                votes[p.votedFor] = (votes[p.votedFor] || 0) + 1;
+            }
+        });
+
+        let eliminatedPlayerId = null;
+        let maxVotes = 0;
+        let isTie = false;
+        if (Object.keys(votes).length > 0) {
+            for (const [pid, count] of Object.entries(votes)) {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    eliminatedPlayerId = pid;
+                    isTie = false;
+                } else if (count === maxVotes) {
+                    isTie = true;
+                }
+            }
+        }
+
+        if (isTie) eliminatedPlayerId = null;
+
+        if (eliminatedPlayerId) {
+            players[eliminatedPlayerId].isAlive = false;
+            events.push(`${players[eliminatedPlayerId].nickname} was eliminated by popular vote. Their role was ${players[eliminatedPlayerId].role}.`);
+        } else {
+            events.push("The vote was tied. No one was eliminated.");
+        }
+
+        Object.keys(players).forEach(pid => {
+            players[pid].actionTarget = null;
+            players[pid].votedFor = null;
+        });
+
+        return {
+            state: 'announcement',
+            phase: 'night',
+            turn: turn + 1,
+            players: players,
+            announcement: { title: `Day ${turn} ended`, events: events },
+        };
+    }
+
+    function checkWinCondition(players) {
+        const alivePlayers = Object.values(players).filter(p => p.isAlive);
+        const aliveWolves = alivePlayers.filter(p => p.role === 'werewolf');
+        const aliveVillagers = alivePlayers.filter(p => p.role !== 'werewolf');
+
+        if (aliveWolves.length === 0) {
+            return { winningTeam: "Villagers", reason: "All werewolves have been eliminated!", players };
+        }
+        if (aliveWolves.length >= aliveVillagers.length) {
+            return { winningTeam: "Werewolves", reason: "The werewolves have taken over the village!", players };
+        }
+        return null;
+    }
+
+
+    async function startGame() {
+        setLoading(true);
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        try {
+            await runTransaction(db, async (transaction) => {
+                const roomDoc = await transaction.get(roomRef);
+                if (!roomDoc.exists()) throw new Error("Room not found.");
+                const roomData = roomDoc.data();
+                
+                const playerIds = Object.keys(roomData.players);
+                const settings = roomData.settings;
+
+                let roles = [];
+                for (let i = 0; i < settings.numWerewolves; i++) roles.push('werewolf');
+                if (settings.includeSeer) roles.push('seer');
+                if (settings.includeDoctor) roles.push('doctor');
+                if (settings.includeHunter) roles.push('hunter');
+                while (roles.length < playerIds.length) roles.push('villager');
+                
+                for (let i = roles.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [roles[i], roles[j]] = [roles[j], roles[i]];
+                }
+
+                const updatedPlayers = { ...roomData.players };
+                playerIds.forEach((pid, index) => {
+                    updatedPlayers[pid] = {
+                        ...updatedPlayers[pid],
+                        isAlive: true,
+                        role: roles[index],
+                        votedFor: null,
+                        actionTarget: null,
+                        ready: false,
+                        hasUsedAbility: false, // For Hunter
+                    };
+                });
+
+                transaction.update(roomRef, {
+                    state: 'role_reveal',
+                    players: updatedPlayers,
+                    turn: 1,
+                    phase: 'night',
+                    events: [],
+                    announcement: null
+                });
+            });
+        } catch (e) {
+            console.error("Start Game Error:", e);
+            showToast("Failed to start game.", true);
+        } finally {
+            setLoading(false);
+        }
+    }
+    
+    function renderRoleReveal(roomData) {
+        showScreen('game-screen');
+        const myPlayerData = roomData.players[currentUser.uid];
+        const roleInfo = {
+            werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
+            seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
+            doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
+            hunter: { emoji: '�', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
+            villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
+        };
+
+        document.getElementById('role-reveal-emoji').textContent = roleInfo[myPlayerData.role].emoji;
+        document.getElementById('role-reveal-name').textContent = `You are a ${myPlayerData.role.charAt(0).toUpperCase() + myPlayerData.role.slice(1)}`;
+        document.getElementById('role-reveal-description').textContent = roleInfo[myPlayerData.role].desc;
+        
+        const alliesDiv = document.getElementById('role-reveal-allies');
+        if (myPlayerData.role === 'werewolf') {
+            const allies = Object.values(roomData.players).filter(p => p.role === 'werewolf' && p.nickname !== myPlayerData.nickname);
+            if(allies.length > 0) {
+                const allyNames = allies.map(a => a.isDeveloper ? a.nickname.substring(DEV_PREFIX.length).trim() : a.nickname);
+                alliesDiv.innerHTML = `<p class="muted">Your fellow werewolves are: <strong>${allyNames.join(', ')}</strong></p>`;
+            } else {
+                alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`;
+            }
+        } else {
+            alliesDiv.innerHTML = '';
+        }
+
+        showModal('role-reveal-modal', true);
+    }
+
+    function renderAnnouncement(roomData) {
+        const { title, events } = roomData.announcement;
+        document.getElementById('event-title').textContent = title;
+        document.getElementById('event-body').innerHTML = events.map(e => `<p>${e}</p>`).join('');
+        showModal('event-modal', true);
+
+        setTimeout(async () => {
+            showModal('event-modal', false);
+            if (roomData.hostId === currentUser.uid) {
+                const roomRef = doc(db, 'rooms', currentRoomId);
+                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+                await updateDoc(roomRef, {
+                    state: roomData.phase,
+                    phaseEndTime: endTime,
+                    announcement: null
+                });
+            }
+        }, 4500);
+    }
+    
+    function renderGamePhase(roomData) {
+        renderGamePlayerList(roomData);
+        renderPlayerCards(roomData);
+        updateTimer(roomData.phaseEndTime);
+        
+        const myData = roomData.players[currentUser.uid];
+        const isNight = roomData.phase === 'night';
+        
+        document.getElementById('game-phase-title').textContent = `${isNight ? 'Night' : 'Day'} ${roomData.turn}`;
+        document.getElementById('game-phase-subtitle').textContent = isNight ? "Make your move..." : "Discuss and vote!";
+
+        const chatInput = document.getElementById('chat-input');
+        const chatSend = document.getElementById('chat-send');
+        const canChat = !isNight && myData.isAlive;
+        chatInput.disabled = !canChat;
+        chatSend.disabled = !canChat;
+        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled.';
+    }
+    
+    function renderPlayerCards(roomData) {
+        const mainContent = document.getElementById('game-main-content');
+        mainContent.innerHTML = '';
+        mainContent.style.display = 'grid';
+        mainContent.style.gridTemplateColumns = 'repeat(auto-fill, minmax(150px, 1fr))';
+        mainContent.style.gap = '16px';
+        
+        const myData = roomData.players[currentUser.uid];
+
+        Object.entries(roomData.players).forEach(([pid, p]) => {
+            const card = document.createElement('div');
+            card.className = 'p-4 rounded-lg flex flex-col items-center justify-center text-center';
+            card.style.background = 'rgba(255,255,255,0.02)';
+            card.style.border = '1px solid var(--border)';
+
+            const isMe = pid === currentUser.uid;
+            const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
+
+            let statusHTML = p.isAlive ? `<div class="text-2xl">🙂</div>` : `<div class="text-2xl">👻</div>`;
+            
+            card.innerHTML = `
+                ${statusHTML}
+                <strong class="mt-2">${displayName}</strong>
+                ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
+                <div class="flex gap-2 mt-3"></div>
+            `;
+            
+            const actionsContainer = card.querySelector('.flex');
+            const hasActed = !!myData.actionTarget;
+            const canAct = myData.isAlive && p.isAlive && !isMe;
+            
+            if (roomData.phase === 'night') {
+                if (currentUser.isDeveloper) {
+                    if(p.isAlive && !isMe) {
+                        actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">💀</button>`;
+                        actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">👁️</button>`;
+                        actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">🛡️</button>`;
+                    } else if (!p.isAlive) {
+                        actionsContainer.innerHTML += `<button title="Revive" class="btn btn-secondary p-2" onclick="dev_togglePlayerAlive('${pid}', true)">➕</button>`;
+                    }
+                } 
+                else if (canAct && !hasActed) {
+                    if (myData.role === 'werewolf') actionsContainer.innerHTML += `<button title="Kill" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'kill')">💀</button>`;
+                    if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'seer')">👁️</button>`;
+                    if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'doctor')">🛡️</button>`;
+                    if (myData.role === 'hunter' && !myData.hasUsedAbility) actionsContainer.innerHTML += `<button title="Shoot" class="btn btn-secondary p-2" onclick="performNightAction('${pid}', 'hunter')">🎯</button>`;
+                }
+            } else {
+                if (myData.isAlive && p.isAlive && !isMe && !myData.votedFor) {
+                    actionsContainer.innerHTML += `<button class="btn btn-primary px-4" onclick="voteForPlayer('${pid}')">Vote</button>`;
+                }
+            }
+            
+            if (!p.isAlive) card.style.opacity = '0.5';
+            if (myData.actionTarget === pid || (typeof myData.actionTarget === 'object' && myData.actionTarget?.target === pid) || myData.votedFor === pid) {
+                 card.style.boxShadow = '0 0 15px #7c3aed';
+            }
+
+            mainContent.appendChild(card);
+        });
+    }
+
+
+    function renderGamePlayerList(roomData) {
+        const list = document.getElementById('game-player-list');
+        list.innerHTML = '';
+        const myData = roomData.players[currentUser.uid];
+
+        Object.entries(roomData.players).forEach(([pid, p]) => {
+            const el = document.createElement('div');
+            el.className = 'p-2 rounded-lg mb-2 flex justify-between items-center transition-all';
+            
+            const isMe = pid === currentUser.uid;
+            const isAlive = p.isAlive;
+            const isDev = p.isDeveloper;
+            const displayName = isDev ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
+            
+            let statusIndicator = isAlive ? '🟢' : '👻';
+            let roleIndicator = '';
+            
+            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '🎯', villager:'👱'};
+            if (myData.role === 'werewolf' && p.role === 'werewolf') roleIndicator = roleEmojis.werewolf;
+            if (isMe) roleIndicator = roleEmojis[p.role];
+            if (currentUser.isDeveloper) roleIndicator = roleEmojis[p.role];
+
+            let nickHTML = `<span class="font-bold">${displayName}</span>`;
+            if (isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
+
+            el.innerHTML = `<div><span class="mr-2">${statusIndicator}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
+            
+            if (!isAlive) el.style.opacity = '0.5';
+            if (isMe) el.style.background = 'rgba(255,255,255,0.05)';
+            
+            list.appendChild(el);
+        });
+        
+        document.getElementById('developer-panel').classList.toggle('hidden', !currentUser.isDeveloper);
+    }
+    
+    function renderGameOver(roomData) {
+        const { winningTeam, reason, players } = roomData.gameOver;
+        document.getElementById('game-over-title').textContent = `${winningTeam} Win!`;
+        document.getElementById('game-over-reason').textContent = reason;
+        
+        const rolesList = document.getElementById('game-over-roles');
+        rolesList.innerHTML = '<h4>Final Roles:</h4>';
+        Object.values(players).forEach(p => {
+            const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
+            const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'🎯', villager:'👱'}[p.role] || '❓';
+            rolesList.innerHTML += `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
+        });
+        
+        showModal('game-over-modal', true);
+    }
+
+    async function performNightAction(targetId, actionType) {
+        showToast('Action registered.');
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        const action = currentUser.isDeveloper ? { target: targetId, type: actionType } : targetId;
+        await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: action });
+    }
+
+    async function voteForPlayer(targetId) {
+        showToast('Vote cast.');
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        await updateDoc(roomRef, { [`players.${currentUser.uid}.votedFor`]: targetId });
+    }
+    
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        const myData = {
+            nickname: currentUser.displayName,
+            isDeveloper: currentUser.isDeveloper
+        };
+        
+        const chatRef = collection(db, 'rooms', currentRoomId, 'messages');
+        await addDoc(chatRef, {
+            uid: currentUser.uid,
+            nickname: myData.nickname,
+            isDeveloper: myData.isDeveloper,
+            text: text,
+            timestamp: serverTimestamp()
+        });
+        input.value = '';
+    }
+    
+    async function dev_togglePlayerAlive(pid, shouldBeAlive) {
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        await updateDoc(roomRef, { [`players.${pid}.isAlive`]: shouldBeAlive });
+    }
+    
+    function updateTimer(endTime) {
+        if (gameTimerInterval) clearInterval(gameTimerInterval);
+        const timerEl = document.getElementById('game-timer');
+
+        if (!endTime || !endTime.seconds) {
+            timerEl.textContent = '--:--';
+            return;
+        }
+
+        gameTimerInterval = setInterval(() => {
+            const now = Date.now();
+            const end = endTime.seconds * 1000;
+            const remaining = Math.max(0, Math.round((end - now) / 1000));
+            
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            if (remaining <= 0) clearInterval(gameTimerInterval);
+        }, 1000);
+    }
+
+    // Make functions globally accessible for onclick attributes
+    window.performNightAction = performNightAction;
+    window.voteForPlayer = voteForPlayer;
+    window.dev_togglePlayerAlive = dev_togglePlayerAlive;
+
     // ---------- Event Listeners ----------
     document.getElementById('btn-create-room').addEventListener('click', createRoom);
     document.getElementById('btn-join').addEventListener('click', ()=>{
       const code = document.getElementById('join-code').value.trim().toUpperCase();
-      if(!code){ showToast('Masukkan kode room', true); return; }
+      if(!code){ showToast('Enter a room code', true); return; }
       joinRoom(code);
     });
-    document.getElementById('btn-leave').addEventListener('click', ()=>leaveRoom());
+    document.getElementById('btn-leave').addEventListener('click', leaveRoom);
     document.querySelectorAll('.setting-input').forEach(input => input.addEventListener('change', updateSettingsInDb));
+    document.getElementById('btn-start').addEventListener('click', startGame);
+    document.getElementById('btn-close-role-reveal').addEventListener('click', async () => {
+        showModal('role-reveal-modal', false);
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        await updateDoc(roomRef, { [`players.${currentUser.uid}.ready`]: true });
+    });
+    document.getElementById('btn-back-to-lobby').addEventListener('click', async () => {
+        showModal('game-over-modal', false);
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        await updateDoc(roomRef, { state: 'lobby' });
+    });
+    document.getElementById('chat-send').addEventListener('click', sendMessage);
+    document.getElementById('chat-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+    document.getElementById('dev-end-game').addEventListener('click', async () => {
+        if (confirm("Are you sure you want to end the game?")) {
+            const roomRef = doc(db, 'rooms', currentRoomId);
+            const roomData = (await getDoc(roomRef)).data();
+            await updateDoc(roomRef, { 
+                state: 'game_over',
+                gameOver: { winningTeam: "Nobody", reason: "Game ended by a Developer.", players: roomData.players }
+            });
+        }
+    });
 
     const rulesModal = document.getElementById('rules-modal-backdrop');
     document.getElementById('btn-how-to-play').addEventListener('click', () => rulesModal.classList.add('active'));
@@ -479,4 +1179,3 @@
   </script>
 </body>
 </html>
-
