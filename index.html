@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Who's Wolf</title>
+  <title>Who's Wolf — Enhanced</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -31,7 +31,12 @@
     body.shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
     @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
-    .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:16px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
+    body.night-phase-bg { animation: pulse-bg 10s ease-in-out infinite; }
+    @keyframes pulse-bg { 0% { background-color: var(--bg); } 50% { background-color: #111827; } 100% { background-color: var(--bg); } }
+    .light-theme.night-phase-bg { animation: pulse-bg-light 10s ease-in-out infinite; }
+    @keyframes pulse-bg-light { 0% { background-color: var(--bg); } 50% { background-color: #e2e8f0; } 100% { background-color: var(--bg); } }
+
+    .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:1rem; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
 
     .card{background:linear-gradient(180deg, var(--card-gradient-start), var(--card-gradient-end));border-radius:14px;padding:24px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(2,6,23,0.1); transition: background-color 0.3s, border-color 0.3s;}
@@ -60,7 +65,6 @@
     #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
     #notification-toast.show { opacity: 1; top: 30px; }
     
-    .screen * { box-sizing:border-box }
     .hidden { display: none !important; }
 
     .shimmer-tag { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: linear-gradient(270deg, #ff2d2d, #ff7b7b, #ff2d2d); background-size: 200% 200%; animation: shimmer 2s ease infinite; }
@@ -86,6 +90,9 @@
     #phase-transition-overlay.visible { opacity: 1; }
     #phase-title { font-size: 2rem; font-weight: bold; margin-top: -2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
     .lag-indicator { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: #f97316; margin-left: 8px; }
+
+    .reveal-animation { animation: reveal 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
+    @keyframes reveal { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 <body>
@@ -97,85 +104,85 @@
   <div id="notification-toast"></div>
 
   <div id="loading-overlay" class="screen active" style="z-index:40">
-    <div style="text-align:center">
-      <div style="font-size:56px">🐺</div>
-      <h1 style="font-size:26px;margin:6px 0;">Who's Wolf?</h1>
-      <div class="spinner" style="width:32px; height:32px; border-width:3px; margin: 20px auto 12px auto;"></div>
+    <div class="text-center">
+      <div class="text-6xl">🐺</div>
+      <h1 class="text-3xl my-2">Who's Wolf?</h1>
+      <div class="spinner w-8 h-8 border-3 mx-auto mt-5 mb-3"></div>
       <div class="muted">Connecting...</div>
     </div>
   </div>
 
   <div id="nickname-screen" class="screen" style="z-index:10">
-    <div class="card" style="width:100%;max-width:420px;text-align:center">
-      <div style="font-size:56px">🐺</div>
-      <h1 style="font-size:26px;margin:6px 0">Welcome!</h1>
+    <div class="card w-full max-w-md text-center">
+      <div class="text-6xl">🐺</div>
+      <h1 class="text-3xl my-2">Welcome!</h1>
       <p class="muted">Enter your nickname to play</p>
-      <div style="margin-top:16px;">
-        <div class="input-wrapper" style="margin-bottom:12px"><span class="input-icon">🙍</span><input id="nickname-input" class="input-field has-icon" placeholder="Your Nickname" maxlength="25"></div>
-        <button id="btn-enter-lobby" class="btn btn-primary" style="width:100%">Enter Lobby</button>
+      <div class="mt-4">
+        <div class="input-wrapper mb-3"><span class="input-icon">🙍</span><input id="nickname-input" class="input-field has-icon" placeholder="Your Nickname" maxlength="25"></div>
+        <button id="btn-enter-lobby" class="btn btn-primary w-full">Enter Lobby</button>
       </div>
     </div>
   </div>
 
   <div id="lobby-screen" class="screen" style="z-index:15">
-    <div class="card" style="width:100%;max-width:900px">
-      <div style="display:flex;justify-content:space-between;align-items:center; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div style="font-size:32px">🐺</div>
-            <h2 style="margin:0; font-size:22px;">Who's Wolf?</h2>
+    <div class="card w-full max-w-4xl">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b" style="border-color: var(--border);">
+        <div class="flex items-center gap-3">
+            <div class="text-4xl">🐺</div>
+            <h2 class="m-0 text-2xl font-bold">Who's Wolf?</h2>
         </div>
-        <div style="display:flex; align-items:center; gap:16px;">
+        <div class="flex items-center justify-between sm:justify-end gap-4">
           <button id="theme-toggle-btn" class="btn btn-secondary p-2">🌓</button>
-          <div id="welcome-container" style="text-align:right;">
+          <div id="welcome-container" class="text-right">
             <div class="flex items-center gap-2">
-              <h2 id="welcome-text" style="margin:0; font-size:18px;">Welcome</h2>
+              <h2 id="welcome-text" class="m-0 text-lg"></h2>
               <button id="btn-edit-name" class="text-sm">✏️</button>
             </div>
-            <p class="muted" id="welcome-sub" style="margin:0; font-size:12px;">Ready to hunt?</p>
+            <p class="muted m-0 text-xs">Ready to hunt?</p>
           </div>
           <button id="btn-how-to-play" class="btn btn-secondary">How to Play</button>
         </div>
       </div>
 
-      <div id="pre-room-view" style="margin-top:24px; display:flex; flex-direction:column; align-items:center; gap: 24px;">
-        <div style="text-align:center; width:100%; max-width:320px;">
-          <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Create a New Room</h3>
-          <button id="btn-create-room" class="btn btn-primary" style="width:100%;">Create Room</button>
+      <div id="pre-room-view" class="mt-6 flex flex-col items-center gap-6">
+        <div class="text-center w-full max-w-xs">
+          <h3 class="mt-0 mb-3 font-semibold">Create a New Room</h3>
+          <button id="btn-create-room" class="btn btn-primary w-full">Create Room</button>
         </div>
-        <div style="display:flex; align-items:center; gap:12px; width:100%; max-width: 320px; color: var(--muted);">
-          <hr style="flex:1; border:0; border-top: 1px solid var(--border);"><span class="text-sm">OR</span><hr style="flex:1; border:0; border-top: 1px solid var(--border);">
+        <div class="flex items-center gap-3 w-full max-w-xs" style="color: var(--muted);">
+          <hr class="flex-1 border-0 border-t" style="border-color: var(--border);"><span class="text-sm">OR</span><hr class="flex-1 border-0 border-t" style="border-color: var(--border);">
         </div>
-        <div style="text-align:center; width:100%; max-width:320px;">
-          <h3 style="margin-top:0; margin-bottom:12px; font-weight:600;">Join an Existing Room</h3>
-          <div style="display:flex;gap:8px;">
-            <input id="join-code" class="input-field" placeholder="ROOM CODE" style="flex:1; text-transform:uppercase;"/>
+        <div class="text-center w-full max-w-xs">
+          <h3 class="mt-0 mb-3 font-semibold">Join an Existing Room</h3>
+          <div class="flex gap-2">
+            <input id="join-code" class="input-field flex-1 uppercase" placeholder="ROOM CODE"/>
             <button id="btn-join" class="btn btn-green">Join</button>
           </div>
         </div>
       </div>
 
-      <div id="in-room-view" class="hidden" style="margin-top:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0">Room Code: <span id="room-code-display" style="color:#7c3aed; font-weight:700; cursor:pointer;"></span></h3>
+      <div id="in-room-view" class="hidden mt-3">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="m-0 text-lg">Room Code: <span id="room-code-display" class="text-purple-500 font-bold cursor-pointer"></span></h3>
             <button id="btn-leave" class="btn btn-secondary">Leave Room</button>
         </div>
-        <div style="display:flex;gap:16px">
-          <div style="flex:1">
-            <h4 style="margin:0 0 8px 0">Players (<span id="player-count">0</span>)</h4>
-            <div id="player-list" style="min-height:220px;max-height:220px;overflow:auto;border-radius:10px;padding:8px;background:rgba(125,125,125,0.05)"></div>
+        <div class="flex flex-col md:flex-row gap-4">
+          <div class="flex-1">
+            <h4 class="m-0 mb-2">Players (<span id="player-count">0</span>)</h4>
+            <div id="player-list" class="min-h-[220px] max-h-[220px] md:max-h-[360px] overflow-auto rounded-lg p-2 bg-black bg-opacity-5"></div>
           </div>
-          <div id="room-settings-panel" style="width:360px">
-            <div class="card" style="padding:16px">
-              <h3 style="margin:0 0 12px 0">Room Settings</h3>
+          <div id="room-settings-panel" class="w-full md:w-80">
+            <div class="card p-4">
+              <h3 class="m-0 mb-3">Room Settings</h3>
               <div class="space-y-3">
                 <div>
                   <label class="muted text-sm">Werewolves</label>
                   <input id="setting-wolves" type="number" min="1" value="1" class="input-field setting-input w-full mt-1"/>
                 </div>
                 <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <label class="toggle-label muted">Seer <input id="setting-seer" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
-                  <label class="toggle-label muted">Doctor <input id="setting-doctor" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
-                  <label class="toggle-label muted">Hunter <input id="setting-hunter" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm">Seer <input id="setting-seer" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm">Doctor <input id="setting-doctor" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm">Hunter <input id="setting-hunter" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
                 </div>
                 <div class="grid grid-cols-2 gap-4 pt-2">
                   <div>
@@ -189,49 +196,49 @@
                 </div>
               </div>
             </div>
-             <button id="btn-start" class="btn btn-primary hidden" style="width:100%; margin-top:12px;">Start Game</button>
+             <button id="btn-start" class="btn btn-primary hidden w-full mt-3">Start Game</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="game-screen" class="screen" style="z-index:20; display:flex; flex-direction:column; gap:16px; padding:16px;">
-    <div class="card" style="width:100%; padding:12px 24px; display:flex; justify-content:space-between; align-items:center;">
+  <div id="game-screen" class="screen flex-col gap-4">
+    <div class="card w-full p-3 px-6 flex justify-between items-center">
       <div>
-        <h2 id="game-phase-title" style="margin:0; font-size:22px;">Night 1</h2>
-        <p id="game-phase-subtitle" class="muted" style="margin:0; font-size:14px;">The village is asleep...</p>
+        <h2 id="game-phase-title" class="m-0 text-2xl">Night 1</h2>
+        <p id="game-phase-subtitle" class="muted m-0 text-sm">The village is asleep...</p>
       </div>
       <div class="flex items-center gap-4">
         <button id="skip-vote-btn" class="btn btn-secondary hidden">Skip Vote</button>
-        <div style="text-align:center;">
-          <div id="game-timer" style="font-size:28px; font-weight:700;">00:45</div>
-          <div class="muted" style="font-size:12px;">TIME REMAINING</div>
+        <div class="text-center">
+          <div id="game-timer" class="text-3xl font-bold transition-colors duration-300">00:45</div>
+          <div class="muted text-xs">TIME REMAINING</div>
         </div>
       </div>
     </div>
 
-    <div style="width:100%; flex:1; display:flex; gap:16px; overflow:hidden;">
-      <div style="display:flex; flex-direction:column; gap:16px; width:280px;">
-        <div class="card" style="padding:16px; flex:1; display:flex; flex-direction:column;">
-          <h3 style="margin:0 0 8px 0;">Players</h3>
-          <div id="game-player-list" style="overflow-y:auto; flex:1;"></div>
+    <div class="w-full flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
+      <div class="flex flex-col gap-4 w-full lg:w-72 order-2 lg:order-1 h-48 lg:h-auto">
+        <div class="card p-4 flex-1 flex flex-col">
+          <h3 class="m-0 mb-2">Players</h3>
+          <div id="game-player-list" class="overflow-y-auto flex-1"></div>
         </div>
-        <div id="developer-panel" class="card hidden" style="padding:16px;">
-          <h4 style="margin:0 0 8px 0; color:#ff5555;">Developer Tools</h4>
+        <div id="developer-panel" class="card hidden p-4">
+          <h4 class="m-0 mb-2 text-red-400">Developer Tools</h4>
           <p class="muted text-xs">Use with caution!</p>
-          <button id="dev-end-game" class="btn btn-secondary w-full text-xs">End Game</button>
+          <button id="dev-end-game" class="btn btn-secondary w-full text-xs mt-2">End Game</button>
         </div>
       </div>
 
-      <div id="game-main-content" class="card p-4 flex-1 overflow-y-auto grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 content-start">
+      <div id="game-main-content" class="card p-2 sm:p-4 flex-1 overflow-y-auto grid gap-2 sm:gap-4 grid-cols-3 md:grid-cols-4 content-start order-1 lg:order-2">
       </div>
 
-      <div class="card" style="padding:16px; width:320px; display:flex; flex-direction:column;">
-        <h3 style="margin:0 0 8px 0;">Global Chat</h3>
-        <div id="chat-messages" style="flex:1; overflow-y:auto; margin-bottom:8px; font-size:14px;"></div>
-        <div style="display:flex; gap:8px;">
-          <input id="chat-input" class="input-field" style="flex:1;" placeholder="Type a message..." disabled/>
+      <div class="card p-4 w-full lg:w-80 flex flex-col order-3 h-64 lg:h-auto">
+        <h3 class="m-0 mb-2">Room Chat</h3>
+        <div id="chat-messages" class="flex-1 overflow-y-auto mb-2 text-sm"></div>
+        <div class="flex gap-2">
+          <input id="chat-input" class="input-field flex-1" placeholder="Type a message..." disabled/>
           <button id="chat-send" class="btn btn-primary" disabled>Send</button>
         </div>
       </div>
@@ -239,43 +246,43 @@
   </div>
 
   <div id="role-reveal-overlay" class="screen" style="z-index: 25; background: rgba(11, 18, 32, 0.9); text-align: center; color: white;">
-      <div class="card" style="text-align:center;">
-        <div id="role-reveal-emoji" style="font-size:80px; margin-bottom:12px;"></div>
-        <h1 id="role-reveal-name" style="font-size:28px; margin:0;"></h1>
-        <p id="role-reveal-description" class="muted" style="margin-top:8px;"></p>
+      <div class="card">
+        <div id="role-reveal-emoji" class="text-8xl mb-3"></div>
+        <h1 id="role-reveal-name" class="text-3xl m-0"></h1>
+        <p id="role-reveal-description" class="muted mt-2"></p>
         <div id="role-reveal-allies" class="mt-4"></div>
       </div>
   </div>
   
   <div id="seer-result-modal" class="modal-backdrop">
-    <div class="modal card" style="text-align:center;">
-        <h1 id="seer-result-title" style="font-size:28px; margin:0;">Seer's Vision</h1>
-        <p id="seer-result-body" class="muted" style="margin-top:16px;"></p>
+    <div class="modal card text-center">
+        <h1 id="seer-result-title" class="text-3xl m-0">Seer's Vision</h1>
+        <p id="seer-result-body" class="muted mt-4"></p>
         <button onclick="showModal('seer-result-modal', false)" class="btn btn-primary w-full mt-4">Close</button>
     </div>
   </div>
 
   <div id="event-modal" class="modal-backdrop">
-    <div class="modal card" style="text-align:center;">
-        <h1 id="event-title" style="font-size:28px; margin:0;"></h1>
-        <div id="event-body" class="muted" style="margin-top:16px; text-align:left;"></div>
+    <div class="modal card text-center">
+        <h1 id="event-title" class="text-3xl m-0"></h1>
+        <div id="event-body" class="muted mt-4 text-left"></div>
         <button id="btn-close-event" class="btn btn-primary w-full mt-4">Continue</button>
     </div>
   </div>
 
   <div id="rules-modal-backdrop" class="modal-backdrop">
     <div class="modal card">
-        <h2 style="margin-top:0">How to Play Who's Wolf</h2>
+        <h2 class="mt-0">How to Play Who's Wolf</h2>
         <p class="muted">The game is divided into two phases: Night and Day. The goal of the Villagers is to eliminate all Werewolves. The goal of the Werewolves is to outnumber the Villagers.</p>
-        <h3 style="margin-bottom:8px;">Roles</h3>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <div><strong>🐺 Werewolf</strong><p class="muted" style="font-size:14px;">During the night, wake up with fellow werewolves to choose one player to eliminate.</p></div>
-            <div><strong>👱 Villager</strong><p class="muted" style="font-size:14px;">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
-            <div><strong>👁️ Seer</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
-            <div><strong>🧑‍⚕️ Doctor</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
-            <div><strong>👮 Hunter</strong><p class="muted" style="font-size:14px;">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
+        <h3 class="mb-2">Roles</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><strong>🐺 Werewolf</strong><p class="muted text-sm">During the night, wake up with fellow werewolves to choose one player to eliminate.</p></div>
+            <div><strong>👱 Villager</strong><p class="muted text-sm">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
+            <div><strong>👁️ Seer</strong><p class="muted text-sm">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
+            <div><strong>🧑‍⚕️ Doctor</strong><p class="muted text-sm">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
+            <div><strong>👮 Hunter</strong><p class="muted text-sm">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
         </div>
-        <div style="text-align:right; margin-top:20px;">
+        <div class="text-right mt-5">
             <button id="btn-close-rules" class="btn btn-primary">Got it!</button>
         </div>
     </div>
@@ -287,7 +294,10 @@
     import { getFirestore, doc, collection, setDoc, getDoc, runTransaction, onSnapshot, deleteField, updateDoc, deleteDoc, serverTimestamp, query, orderBy, addDoc, where, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const screens = document.querySelectorAll('.screen');
-    function showScreen(id){ screens.forEach(s => s.classList.toggle('active', s.id === id)); }
+    function showScreen(id, show = true){ 
+        const screenEl = document.getElementById(id);
+        if (screenEl) screenEl.classList.toggle('active', show);
+    }
     const loadingOverlay = document.getElementById('loading-overlay');
     function setLoading(on){ loadingOverlay.classList.toggle('active', on); }
     function showToast(msg, err=false){
@@ -657,8 +667,27 @@
 
     async function hostGameLogic(roomData) {
         const roomRef = doc(db, 'rooms', currentRoomId);
-        const { state, players, phaseEndTime } = roomData;
+        const { state, players, phaseEndTime, announcementEndTime } = roomData;
 
+        // New authoritative logic for handling announcement phase end
+        if (state === 'announcement' && announcementEndTime && Timestamp.now().seconds > announcementEndTime.seconds) {
+            await updateDoc(roomRef, { processing: true });
+            
+            const nextPhase = roomData.phase; // This was set when we entered announcement
+            const duration = nextPhase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+            const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+
+            await updateDoc(roomRef, {
+                state: nextPhase,
+                phaseEndTime: endTime,
+                announcement: null,
+                announcementEndTime: deleteField(),
+                processing: false,
+            });
+            return;
+        }
+
+        // Existing logic for handling day/night phase end
         if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             let nextStateData = {};
@@ -673,7 +702,12 @@
             if (winState) {
                 await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
             } else {
-                await updateDoc(roomRef, { ...nextStateData, processing: false });
+                const ANNOUNCEMENT_DURATION_MS = 12000;
+                await updateDoc(roomRef, { 
+                    ...nextStateData, 
+                    announcementEndTime: Timestamp.fromMillis(Date.now() + ANNOUNCEMENT_DURATION_MS),
+                    processing: false 
+                });
             }
         }
     }
@@ -710,7 +744,7 @@
         if (hunterShotTarget) deaths.add(hunterShotTarget);
         
         deaths.forEach(pid => {
-            if (players[pid].isAlive) {
+            if (players[pid] && players[pid].isAlive) {
                 players[pid].isAlive = false;
                 events.push(`**${getDisplayName(players[pid])}** was found dead.`);
             }
@@ -814,9 +848,11 @@
                 playerIds.forEach((pid, index) => {
                     updatedPlayers[pid] = { ...updatedPlayers[pid], isAlive: true, role: roles[index], votedFor: null, actionTarget: null, hasUsedAbility: false, };
                 });
+                
+                const ROLE_REVEAL_DURATION_MS = 8000;
                 transaction.update(roomRef, {
                     state: 'role_reveal', players: updatedPlayers, turn: 1, phase: 'night',
-                    phaseEndTime: Timestamp.fromMillis(Date.now() + 5000),
+                    announcementEndTime: Timestamp.fromMillis(Date.now() + ROLE_REVEAL_DURATION_MS),
                     processing: false,
                 });
             });
@@ -827,8 +863,13 @@
     }
     
     function renderRoleReveal(roomData) {
-        showScreen('game-screen');
+        showScreen('game-screen', false); // Hide game screen if visible
         showScreen('role-reveal-overlay');
+        const card = document.querySelector('#role-reveal-overlay .card');
+        card.classList.remove('reveal-animation');
+        void card.offsetWidth; // Trigger reflow to restart animation
+        card.classList.add('reveal-animation');
+
         const myPlayerData = roomData.players[currentUser.uid];
         const roleInfo = {
             werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
@@ -851,16 +892,7 @@
             } else { alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`; }
         } else { alliesDiv.innerHTML = ''; }
 
-        setTimeout(async () => {
-            if (localGameState.state !== 'role_reveal' || !currentRoomId) return;
-            showScreen('role-reveal-overlay');
-            if (localGameState.hostId === currentUser.uid) {
-                const roomRef = doc(db, 'rooms', currentRoomId);
-                const duration = roomData.settings.nightDuration;
-                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
-            }
-        }, 5000);
+        // The transition is now handled by hostGameLogic, no client-side timer needed for state change.
     }
 
     function renderAnnouncement(roomData) {
@@ -874,36 +906,27 @@
             setTimeout(() => document.body.classList.remove('shake'), 500);
         }
         
-        const ANNOUNCEMENT_DURATION = 12000;
-        const roomRef = doc(db, 'rooms', currentRoomId);
-        const hostTimeout = setTimeout(async () => {
-            if (localGameState.hostId === currentUser.uid) {
-                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
-                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-                await updateDoc(roomRef, { state: roomData.phase, phaseEndTime: endTime, announcement: null });
-            }
-        }, ANNOUNCEMENT_DURATION);
-
-        document.getElementById('btn-close-event').onclick = async () => {
-            clearTimeout(hostTimeout);
+        document.getElementById('btn-close-event').onclick = () => {
             showModal('event-modal', false);
-            if (localGameState.hostId === currentUser.uid) {
-                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
-                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-                await updateDoc(roomRef, { state: roomData.phase, phaseEndTime: endTime, announcement: null });
-            }
         };
     }
     
     function renderGamePhase(roomData, oldState) {
+        showScreen('role-reveal-overlay', false);
+        showModal('event-modal', false);
         showScreen('game-screen');
-        if(oldState !== roomData.state) playPhaseTransition(roomData.phase, roomData.turn);
+        
+        const isNight = roomData.state === 'night';
+        document.body.classList.toggle('night-phase-bg', isNight);
+
+        if(oldState !== roomData.state && oldState !== 'role_reveal' && oldState !== 'announcement') {
+            playPhaseTransition(roomData.state, roomData.turn);
+        }
         renderGamePlayerList(roomData);
         renderPlayerCards(roomData);
         updateTimer(roomData.phaseEndTime);
         
         const myData = roomData.players[currentUser.uid];
-        const isNight = roomData.phase === 'night';
         
         document.getElementById('game-phase-title').textContent = `${isNight ? 'Night' : 'Day'} ${roomData.turn}`;
         document.getElementById('game-phase-subtitle').textContent = isNight ? "Make your move..." : "Discuss and vote!";
@@ -914,7 +937,7 @@
         const canChat = !isNight && (myData.isAlive || currentUser.isDeveloper);
         chatInput.disabled = !canChat;
         chatSend.disabled = !canChat;
-        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled.';
+        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled at night.';
     }
     
     function renderPlayerCards(roomData) {
@@ -927,7 +950,7 @@
             const p = roomData.players[pid];
             if (!p) return;
             const card = document.createElement('div');
-            card.className = 'p-4 rounded-lg flex flex-col items-center justify-between text-center';
+            card.className = 'p-2 rounded-lg flex flex-col items-center justify-between text-center transition-transform hover:scale-105 hover:-translate-y-1';
             card.style.background = 'var(--card)';
             card.style.border = '2px solid transparent';
             card.style.aspectRatio = '1 / 1.2';
@@ -938,14 +961,14 @@
             card.innerHTML = `
                 <div>
                     <div class="text-4xl">${p.isAlive ? '🙂' : '👻'}</div>
-                    <strong class="mt-2 block">${displayName}</strong>
+                    <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
-                <div class="flex flex-wrap justify-center gap-2 mt-3 text-2xl"></div>`;
+                <div class="flex flex-wrap justify-center gap-2 mt-2 text-2xl"></div>`;
             
             const actionsContainer = card.querySelector('.flex');
             
-            if (roomData.phase === 'night') {
+            if (roomData.state === 'night') {
                 if (currentUser.isDeveloper) {
                     if (p.isAlive && !isMe) {
                         actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performDevAction('${pid}', 'kill')">🔪</button>`;
@@ -960,8 +983,8 @@
                     if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}')">👁️</button>`;
                     if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
                 }
-            } else if (roomData.phase === 'day' && myData.isAlive && p.isAlive && !isMe) {
-                 actionsContainer.innerHTML += `<button class="btn btn-primary px-4 text-sm" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
+            } else if (roomData.state === 'day' && myData.isAlive && p.isAlive) {
+                 if (!isMe) actionsContainer.innerHTML += `<button class="btn btn-primary px-3 py-1 text-xs" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
             }
             
             if (!p.isAlive) card.style.opacity = '0.5';
@@ -989,13 +1012,13 @@
             const p = roomData.players[pid];
             if (!p) return;
             const el = document.createElement('div');
-            el.className = 'p-2 rounded-lg mb-2 flex justify-between items-center transition-all';
+            el.className = 'p-2 rounded-lg mb-2 flex justify-between items-center transition-all text-sm';
             const isMe = pid === currentUser.uid;
             const displayName = getDisplayName(p);
             
             let roleIndicator = '';
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
-            if (currentUser.isDeveloper || isMe || (myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
+            if (currentUser.isDeveloper || isMe || (!myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
             }
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
@@ -1047,8 +1070,8 @@
             showToast('Vision received.');
         } else {
             showToast('Action registered.');
-            await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: targetId });
         }
+        await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: targetId });
     }
 
     async function performDevAction(targetId, actionType) {
@@ -1115,6 +1138,11 @@
         gameTimerInterval = setInterval(() => {
             const remaining = Math.max(0, Math.round((endTime.seconds * 1000 - Date.now()) / 1000));
             timerEl.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+            if (remaining <= 10 && remaining > 0) {
+                timerEl.classList.add('text-red-500', 'animate-pulse');
+            } else {
+                timerEl.classList.remove('text-red-500', 'animate-pulse');
+            }
             if (remaining <= 0) clearInterval(gameTimerInterval);
         }, 1000);
     }
