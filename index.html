@@ -497,6 +497,12 @@
         }
         const roomData = snap.data();
         const oldState = localGameState.state;
+        
+        // **FIX**: Always update playerOrder for all clients when players object changes.
+        if (roomData.players) {
+            playerOrder = Object.keys(roomData.players).sort((a,b) => getDisplayName(roomData.players[a]).localeCompare(getDisplayName(roomData.players[b])));
+        }
+        
         localGameState = roomData;
         
         if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby' && !roomData.processing) {
@@ -839,23 +845,39 @@
                 if (!roomDoc.exists()) throw new Error("Room not found.");
                 const roomData = roomDoc.data();
                 const playerIds = Object.keys(roomData.players);
-                playerOrder = [...playerIds].sort((a,b) => getDisplayName(roomData.players[a]).localeCompare(getDisplayName(roomData.players[b])));
                 const settings = roomData.settings;
-                let roles = Array(settings.numWerewolves).fill('werewolf');
-                if (settings.includeSeer) roles.push('seer');
-                if (settings.includeDoctor) roles.push('doctor');
-                if (settings.includeHunter) roles.push('hunter');
-                while (roles.length < playerIds.length) roles.push('villager');
-                roles.sort(() => Math.random() - 0.5);
+                
+                // **FIX**: Correct role assignment logic
+                const rolesToAssign = [];
+                for (let i = 0; i < settings.numWerewolves; i++) {
+                    rolesToAssign.push('werewolf');
+                }
+                if (settings.includeSeer) rolesToAssign.push('seer');
+                if (settings.includeDoctor) rolesToAssign.push('doctor');
+                if (settings.includeHunter) rolesToAssign.push('hunter');
+                while (rolesToAssign.length < playerIds.length) {
+                    rolesToAssign.push('villager');
+                }
+                rolesToAssign.sort(() => Math.random() - 0.5); // Shuffle the roles
 
                 const updatedPlayers = { ...roomData.players };
                 playerIds.forEach((pid, index) => {
-                    updatedPlayers[pid] = { ...updatedPlayers[pid], isAlive: true, role: roles[index], votedFor: null, actionTarget: null, hasUsedAbility: false, };
+                    updatedPlayers[pid] = { 
+                        ...updatedPlayers[pid], 
+                        isAlive: true, 
+                        role: rolesToAssign[index], 
+                        votedFor: null, 
+                        actionTarget: null, 
+                        hasUsedAbility: false, 
+                    };
                 });
                 
                 const ROLE_REVEAL_DURATION_MS = 5000;
                 transaction.update(roomRef, {
-                    state: 'role_reveal', players: updatedPlayers, turn: 1, phase: 'night',
+                    state: 'role_reveal', 
+                    players: updatedPlayers, 
+                    turn: 1, 
+                    phase: 'night',
                     announcementEndTime: Timestamp.fromMillis(Date.now() + ROLE_REVEAL_DURATION_MS),
                     processing: false,
                 });
@@ -883,7 +905,7 @@
             seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
             hunter: { emoji: '👮', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
-            villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
+            villager: { emoji: '�', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
         };
 
         document.getElementById('role-reveal-emoji').textContent = roleInfo[myPlayerData.role].emoji;
