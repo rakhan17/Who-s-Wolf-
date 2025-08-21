@@ -251,7 +251,7 @@
   <div id="event-modal" class="modal-backdrop">
     <div class="modal card" style="text-align:center;">
         <h1 id="event-title" style="font-size:28px; margin:0;"></h1>
-        <div id="event-body" class="muted" style="margin-top:16px;"></div>
+        <div id="event-body" class="muted" style="margin-top:16px; text-align:left;"></div>
     </div>
   </div>
 
@@ -276,7 +276,7 @@
             <div><strong>👱 Villager</strong><p class="muted" style="font-size:14px;">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
             <div><strong>👁️ Seer</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
             <div><strong>🧑‍⚕️ Doctor</strong><p class="muted" style="font-size:14px;">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
-            <div><strong>🎯 Hunter</strong><p class="muted" style="font-size:14px;">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
+            <div><strong>👮 Hunter</strong><p class="muted" style="font-size:14px;">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
         </div>
         <div style="text-align:right; margin-top:20px;">
             <button id="btn-close-rules" class="btn btn-primary">Got it!</button>
@@ -411,7 +411,7 @@
     let chatUnsub = null;
     let gameTimerInterval = null;
     let presenceInterval = null;
-    let localGameState = {}; // To store local data like target roles for Seer
+    let localGameState = {};
 
     function setLobbyView(inRoom) {
         document.getElementById('pre-room-view').classList.toggle('hidden', inRoom);
@@ -514,14 +514,13 @@
         }
         const roomData = snap.data();
         
-        // Trigger phase transition animation
         if (localGameState.phase !== roomData.phase && (roomData.phase === 'day' || roomData.phase === 'night')) {
             playPhaseTransition(roomData.phase);
         }
         
-        localGameState = roomData; // Store latest game state locally
+        localGameState = roomData;
         
-        if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby') {
+        if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby' && !roomData.processing) {
             hostGameLogic(roomData);
         }
 
@@ -733,28 +732,33 @@
         if (state === 'role_reveal') {
             const allReady = Object.values(players).every(p => p.ready);
             if (allReady) {
+                await updateDoc(roomRef, { processing: true });
                 const endTime = Timestamp.fromMillis(Date.now() + roomData.settings.nightDuration * 1000);
-                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime });
+                await updateDoc(roomRef, { state: 'night', phaseEndTime: endTime, processing: false });
             }
             return;
         }
 
-        if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
-            setLoading(true);
+        if ((state === 'night' || state === 'day' || state === 'announcement') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
+            await updateDoc(roomRef, { processing: true });
             let nextState = {};
-            if (state === 'night') {
+            
+            if (state === 'announcement') {
+                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+                nextState = { state: roomData.phase, phaseEndTime: endTime, announcement: null };
+            } else if (state === 'night') {
                 nextState = processNightActions(roomData);
-            } else {
+            } else { // day
                 nextState = processDayVotes(roomData);
             }
             
             const winState = checkWinCondition(nextState.players || players);
             if (winState) {
-                await updateDoc(roomRef, { state: 'game_over', gameOver: winState });
+                await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
             } else {
-                await updateDoc(roomRef, nextState);
+                await updateDoc(roomRef, { ...nextState, processing: false });
             }
-            setLoading(false);
         }
     }
     
@@ -795,7 +799,7 @@
         if (deaths.size > 0) {
             deaths.forEach(pid => {
                 players[pid].isAlive = false;
-                events.push(`${players[pid].nickname} was found dead.`);
+                events.push(`**${players[pid].nickname}** was found dead.`);
             });
         } else {
             events.push("The night was quiet... No one died.");
@@ -806,6 +810,7 @@
             phase: 'day',
             players: players,
             announcement: { title: `Night ${turn} ended`, events: events, deaths: deaths.size > 0 },
+            phaseEndTime: Timestamp.fromMillis(Date.now() + 5000)
         };
     }
 
@@ -813,10 +818,14 @@
         let { players, turn } = roomData;
         let events = [];
         const votes = {};
+        const voteDetails = {};
 
-        Object.values(players).forEach(p => {
+        Object.entries(players).forEach(([voterId, p]) => {
             if (p.isAlive && p.votedFor) {
-                votes[p.votedFor] = (votes[p.votedFor] || 0) + 1;
+                const targetId = p.votedFor;
+                votes[targetId] = (votes[targetId] || 0) + 1;
+                if (!voteDetails[targetId]) voteDetails[targetId] = [];
+                voteDetails[targetId].push(p.nickname);
             }
         });
 
@@ -836,10 +845,19 @@
         }
 
         if (isTie) eliminatedPlayerId = null;
+        
+        events.push("The votes are in:");
+        Object.entries(players).forEach(([pid, p]) => {
+            if (p.isAlive) {
+                const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
+                events.push(`**${p.nickname}**: ${votes[pid] || 0} votes ${voterList}`);
+            }
+        });
+        events.push("<hr class='my-2 border-gray-700'>");
 
         if (eliminatedPlayerId) {
             players[eliminatedPlayerId].isAlive = false;
-            events.push(`${players[eliminatedPlayerId].nickname} was eliminated by popular vote. Their role was ${players[eliminatedPlayerId].role}.`);
+            events.push(`**${players[eliminatedPlayerId].nickname}** was eliminated. Their role was **${players[eliminatedPlayerId].role}**.`);
         } else {
             events.push("The vote was tied. No one was eliminated.");
         }
@@ -855,6 +873,7 @@
             turn: turn + 1,
             players: players,
             announcement: { title: `Day ${turn} ended`, events: events, deaths: !!eliminatedPlayerId },
+            phaseEndTime: Timestamp.fromMillis(Date.now() + 8000) // Longer for reading votes
         };
     }
 
@@ -916,7 +935,8 @@
                     turn: 1,
                     phase: 'night',
                     events: [],
-                    announcement: null
+                    announcement: null,
+                    processing: false,
                 });
             });
         } catch (e) {
@@ -931,10 +951,10 @@
         showScreen('game-screen');
         const myPlayerData = roomData.players[currentUser.uid];
         const roleInfo = {
-            werewolf: { emoji: '�', desc: 'Each night, choose a player to eliminate with your pack.' },
+            werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
             seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
-            hunter: { emoji: '🎯', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
+            hunter: { emoji: '�', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
             villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
         };
 
@@ -956,6 +976,13 @@
         }
 
         showModal('role-reveal-modal', true);
+        setTimeout(async () => {
+            if (document.getElementById('role-reveal-modal').classList.contains('active')) {
+                showModal('role-reveal-modal', false);
+                const roomRef = doc(db, 'rooms', currentRoomId);
+                await updateDoc(roomRef, { [`players.${currentUser.uid}.ready`]: true });
+            }
+        }, 5000);
     }
 
     function renderAnnouncement(roomData) {
@@ -971,17 +998,7 @@
 
         setTimeout(async () => {
             showModal('event-modal', false);
-            if (roomData.hostId === currentUser.uid) {
-                const roomRef = doc(db, 'rooms', currentRoomId);
-                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
-                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-                await updateDoc(roomRef, {
-                    state: roomData.phase,
-                    phaseEndTime: endTime,
-                    announcement: null
-                });
-            }
-        }, 4500);
+        }, roomData.phaseEndTime.toMillis() - Date.now() - 500);
     }
     
     function renderGamePhase(roomData) {
@@ -1035,13 +1052,13 @@
             
             const actionsContainer = card.querySelector('.flex');
             const hasActed = !!myData.actionTarget;
-            const canAct = myData.isAlive && p.isAlive && !isMe;
+            const canAct = (myData.isAlive || currentUser.isDeveloper) && p.isAlive && !isMe;
             
             const iconSVG = {
                 kill: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8m-1.99-2.442a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L2.01 6.265a.5.5 0 0 1 0-.707m11.98 0a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L13.28 6.265a.5.5 0 0 1 0-.707M6 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/></svg>`,
                 seer: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/></svg>`,
                 doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7.354 1.646a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L9 3.707V6.5a.5.5 0 0 1-1 0V3.707L7.354 3.053a.5.5 0 1 1-.708-.708z"/><path d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8m15 0A8 8 0 1 0 0 8a8 8 0 0 0 16 0M4.5 7.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z"/></svg>`,
-                hunter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`,
+                hunter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2H2a2 2 0 0 1-2-2v-2H0V9a2 2 0 0 1 2-2h2V5a2 2 0 0 1 2-2h2V1a2 2 0 0 1 2-2z"/></svg>`,
                 revive: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`
             };
             
@@ -1094,7 +1111,7 @@
             let statusIndicator = isAlive ? '🟢' : '👻';
             let roleIndicator = '';
             
-            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '🎯', villager:'👱'};
+            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
             if ((myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf') || (isMe) || (currentUser.isDeveloper)) {
                 roleIndicator = roleEmojis[p.role];
             }
@@ -1122,7 +1139,7 @@
         rolesList.innerHTML = '<h4>Final Roles:</h4>';
         Object.values(players).forEach(p => {
             const displayName = p.isDeveloper ? p.nickname.substring(DEV_PREFIX.length).trim() : p.nickname;
-            const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'🎯', villager:'👱'}[p.role] || '❓';
+            const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
             rolesList.innerHTML += `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
         });
         
