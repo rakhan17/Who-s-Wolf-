@@ -11,6 +11,9 @@
     :root { --bg:#0b1220; --muted:#9ca3af; --card:rgba(255,255,255,0.02); --border:rgba(148,163,184,0.08); }
     html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8;font-family:'Poppins',system-ui,Segoe UI,Roboto; overflow: hidden;}
     
+    body.shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+
     .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:16px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
 
@@ -51,9 +54,23 @@
     .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.2s; }
     .toggle-label input:checked + .toggle-switch { background-color: #4f46e5; }
     .toggle-label input:checked + .toggle-switch::after { transform: translateX(18px); }
+
+    /* Animations */
+    .targeted-card { border: 2px solid #ef4444 !important; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+    #phase-transition-overlay { position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; font-size: 8rem; color: white; pointer-events: none; opacity: 0; transition: opacity 0.5s ease-in-out; }
+    #phase-transition-overlay.day { background: radial-gradient(circle, rgba(251,191,36,0.8) 0%, rgba(251,191,36,0) 70%); }
+    #phase-transition-overlay.night { background: radial-gradient(circle, rgba(79,70,229,0.6) 0%, rgba(79,70,229,0) 70%); }
+    #phase-transition-overlay.visible { opacity: 1; }
   </style>
 </head>
 <body>
+  <!-- New Animation Overlay -->
+  <div id="phase-transition-overlay">
+    <div id="phase-icon"></div>
+  </div>
+
   <!-- Notification Toast -->
   <div id="notification-toast"></div>
 
@@ -496,6 +513,12 @@
           return;
         }
         const roomData = snap.data();
+        
+        // Trigger phase transition animation
+        if (localGameState.phase !== roomData.phase && (roomData.phase === 'day' || roomData.phase === 'night')) {
+            playPhaseTransition(roomData.phase);
+        }
+        
         localGameState = roomData; // Store latest game state locally
         
         if (roomData.hostId === currentUser.uid && roomData.state !== 'lobby') {
@@ -782,7 +805,7 @@
             state: 'announcement',
             phase: 'day',
             players: players,
-            announcement: { title: `Night ${turn} ended`, events: events },
+            announcement: { title: `Night ${turn} ended`, events: events, deaths: deaths.size > 0 },
         };
     }
 
@@ -831,7 +854,7 @@
             phase: 'night',
             turn: turn + 1,
             players: players,
-            announcement: { title: `Day ${turn} ended`, events: events },
+            announcement: { title: `Day ${turn} ended`, events: events, deaths: !!eliminatedPlayerId },
         };
     }
 
@@ -908,7 +931,7 @@
         showScreen('game-screen');
         const myPlayerData = roomData.players[currentUser.uid];
         const roleInfo = {
-            werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
+            werewolf: { emoji: '�', desc: 'Each night, choose a player to eliminate with your pack.' },
             seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
             hunter: { emoji: '🎯', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
@@ -936,10 +959,15 @@
     }
 
     function renderAnnouncement(roomData) {
-        const { title, events } = roomData.announcement;
+        const { title, events, deaths } = roomData.announcement;
         document.getElementById('event-title').textContent = title;
         document.getElementById('event-body').innerHTML = events.map(e => `<p>${e}</p>`).join('');
         showModal('event-modal', true);
+
+        if (deaths) {
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+        }
 
         setTimeout(async () => {
             showModal('event-modal', false);
@@ -969,10 +997,10 @@
 
         const chatInput = document.getElementById('chat-input');
         const chatSend = document.getElementById('chat-send');
-        const canChat = !isNight && myData.isAlive;
+        const canChat = !isNight && (myData.isAlive || currentUser.isDeveloper);
         chatInput.disabled = !canChat;
         chatSend.disabled = !canChat;
-        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled.';
+        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled for the dead.';
     }
     
     function renderPlayerCards(roomData) {
@@ -1010,11 +1038,11 @@
             const canAct = myData.isAlive && p.isAlive && !isMe;
             
             const iconSVG = {
-                kill: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0M4.002 9.42a.5.5 0 0 1-.354-.146l-.853-.854a.5.5 0 1 1 .707-.708l.854.854a.5.5 0 0 1-.353.854m4.001.002a.5.5 0 0 1-.353-.146l-.854-.854a.5.5 0 1 1 .708-.708l.854.854a.5.5 0 0 1-.354.854m3.999-.001a.5.5 0 0 1-.353-.146l-.854-.854a.5.5 0 1 1 .708-.708l.853.854a.5.5 0 0 1-.354.854M8 13a4 4 0 0 1-2.93-1.332.5.5 0 0 1 .65-.75A3 3 0 0 0 8 12a3 3 0 0 0 2.28-1.082.5.5 0 0 1 .65.75A4 4 0 0 1 8 13"/></svg>`,
-                seer: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/></svg>`,
-                doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5H2a.5.5 0 0 1 .5.5v4.5A1.5 1.5 0 0 0 4 14h8a1.5 1.5 0 0 0 1.5-1.5V8a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 0 .354-.854zM4.5 8.5A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5m-.5 2.5A.5.5 0 0 1 4 10h8a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.5-.5"/></svg>`,
-                hunter: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`,
-                revive: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M10.97 4.97a.237.237 0 0 0-.02-.022L7.477 1.477a.237.237 0 0 0-.022-.022.237.237 0 0 0-.022-.022A.235.235 0 0 0 7.15 1.4a.235.235 0 0 0-.215.022.237.237 0 0 0-.022.022.237.237 0 0 0-.022.022L3.03 4.97a.235.235 0 0 0 0 .33l.022.022.022.022.022.022a.235.235 0 0 0 .33 0l2.854-2.854V12a.235.235 0 0 0 .47 0V2.514l2.853 2.854a.235.235 0 0 0 .33 0l.022-.022.022-.022.022-.022a.235.235 0 0 0 0-.33"/></svg>`
+                kill: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8m-1.99-2.442a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L2.01 6.265a.5.5 0 0 1 0-.707m11.98 0a.5.5 0 0 1 .707 0l1.293 1.293a.5.5 0 0 1-.707.707L13.28 6.265a.5.5 0 0 1 0-.707M6 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/></svg>`,
+                seer: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/><path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/></svg>`,
+                doctor: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M7.354 1.646a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L9 3.707V6.5a.5.5 0 0 1-1 0V3.707L7.354 3.053a.5.5 0 1 1-.708-.708z"/><path d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8m15 0A8 8 0 1 0 0 8a8 8 0 0 0 16 0M4.5 7.5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z"/></svg>`,
+                hunter: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`,
+                revive: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143q.09.083.176.171a3 3 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/></svg>`
             };
             
             if (roomData.phase === 'night') {
@@ -1041,7 +1069,7 @@
             
             if (!p.isAlive) card.style.opacity = '0.5';
             if (myData.actionTarget === pid || (typeof myData.actionTarget === 'object' && myData.actionTarget?.target === pid) || myData.votedFor === pid) {
-                 card.style.border = '2px solid #ef4444';
+                card.classList.add('targeted-card');
             }
 
             mainContent.appendChild(card);
@@ -1067,9 +1095,9 @@
             let roleIndicator = '';
             
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '🎯', villager:'👱'};
-            if (myData.role === 'werewolf' && p.role === 'werewolf') roleIndicator = roleEmojis.werewolf;
-            if (isMe) roleIndicator = roleEmojis[p.role];
-            if (currentUser.isDeveloper) roleIndicator = roleEmojis[p.role];
+            if ((myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf') || (isMe) || (currentUser.isDeveloper)) {
+                roleIndicator = roleEmojis[p.role];
+            }
 
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
             if (isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
@@ -1167,6 +1195,24 @@
 
             if (remaining <= 0) clearInterval(gameTimerInterval);
         }, 1000);
+    }
+
+    function playPhaseTransition(phase) {
+        const overlay = document.getElementById('phase-transition-overlay');
+        const icon = document.getElementById('phase-icon');
+        
+        if (phase === 'day') {
+            overlay.className = 'day';
+            icon.textContent = '☀️';
+        } else {
+            overlay.className = 'night';
+            icon.textContent = '🌙';
+        }
+
+        overlay.classList.add('visible');
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+        }, 2000);
     }
 
     // Make functions globally accessible for onclick attributes
