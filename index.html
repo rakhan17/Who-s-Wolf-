@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Who's Wolf</title>
+  <title>Who's Wolf — Enhanced</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -828,6 +828,7 @@
     
     function renderRoleReveal(roomData) {
         showScreen('game-screen');
+        showScreen('role-reveal-overlay');
         const myPlayerData = roomData.players[currentUser.uid];
         const roleInfo = {
             werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
@@ -850,10 +851,9 @@
             } else { alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`; }
         } else { alliesDiv.innerHTML = ''; }
 
-        showScreen('role-reveal-overlay');
         setTimeout(async () => {
-            showScreen('role-reveal-overlay');
             if (localGameState.state !== 'role_reveal' || !currentRoomId) return;
+            showScreen('role-reveal-overlay');
             if (localGameState.hostId === currentUser.uid) {
                 const roomRef = doc(db, 'rooms', currentRoomId);
                 const duration = roomData.settings.nightDuration;
@@ -956,12 +956,12 @@
                         actionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
                     }
                 } else if (p.isAlive && !isMe && myData.isAlive) {
-                    if (myData.role === 'werewolf' || myData.role === 'hunter') actionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
+                    if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) actionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
                     if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}')">👁️</button>`;
                     if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
                 }
-            } else if (roomData.phase === 'day' && myData.isAlive && p.isAlive && !isMe && !myData.votedFor) {
-                actionsContainer.innerHTML += `<button class="btn btn-primary px-4 text-sm" onclick="voteForPlayer('${pid}')">Vote</button>`;
+            } else if (roomData.phase === 'day' && myData.isAlive && p.isAlive && !isMe) {
+                 actionsContainer.innerHTML += `<button class="btn btn-primary px-4 text-sm" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
             }
             
             if (!p.isAlive) card.style.opacity = '0.5';
@@ -1071,13 +1071,13 @@
             if (actionType === 'kill') {
                 let killList = currentActions.kill || [];
                 if (killList.includes(targetId)) {
-                    killList = killList.filter(id => id !== targetId); // Cancel action
+                    killList = killList.filter(id => id !== targetId);
                 } else {
                     killList.push(targetId);
                 }
                 currentActions.kill = killList;
             } else if (actionType === 'protect') {
-                currentActions.protect = currentActions.protect === targetId ? null : targetId; // Cancel action
+                currentActions.protect = currentActions.protect === targetId ? null : targetId;
             }
             transaction.update(roomRef, { devActions: currentActions });
         });
