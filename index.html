@@ -3,13 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Who's Wolf — Enhanced</title>
+  <title>Who's Wolf</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#0b1220; --muted:#9ca3af; --card:rgba(255,255,255,0.02); --border:rgba(148,163,184,0.08); }
-    html,body{height:100%;margin:0;background:var(--bg);color:#e6eef8;font-family:'Poppins',system-ui,Segoe UI,Roboto; overflow: hidden;}
+    :root {
+      --bg: #0b1220;
+      --text: #e6eef8;
+      --muted: #9ca3af;
+      --card: rgba(255, 255, 255, 0.02);
+      --border: rgba(148, 163, 184, 0.08);
+      --card-gradient-start: rgba(255, 255, 255, 0.02);
+      --card-gradient-end: rgba(255, 255, 255, 0.01);
+    }
+    .light-theme {
+      --bg: #f1f5f9;
+      --text: #1e293b;
+      --muted: #64748b;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --card-gradient-start: #ffffff;
+      --card-gradient-end: #f8fafc;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:'Poppins',system-ui,Segoe UI,Roboto; overflow: hidden; transition: background-color 0.3s, color 0.3s;}
     
     body.shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
     @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
@@ -17,26 +34,28 @@
     .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:16px; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
 
-    .card{background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));border-radius:14px;padding:24px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(2,6,23,0.6)}
+    .card{background:linear-gradient(180deg, var(--card-gradient-start), var(--card-gradient-end));border-radius:14px;padding:24px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(2,6,23,0.1); transition: background-color 0.3s, border-color 0.3s;}
     .muted{color:var(--muted)}
     .input-wrapper{position:relative;width:100%;}
     .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
-    input.input-field{width:100%;padding:12px 14px;border-radius:12px;background:transparent;border:1px solid var(--border);color:#e6eef8;outline:none}
+    input.input-field{width:100%;padding:12px 14px;border-radius:12px;background:transparent;border:1px solid var(--border);color:var(--text);outline:none}
     input.input-field.has-icon { padding-left: 44px; }
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;padding:.7rem 1rem;border-radius:12px;font-weight:700;cursor:pointer;border:0; transition: all 0.2s ease;}
     .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     .btn:disabled{opacity:.6;cursor:not-allowed}
     .btn-primary{background:linear-gradient(90deg,#7c3aed,#4f46e5);color:white}
     .btn-secondary{background:#1f2937;color:#cbd5e1}
+    .light-theme .btn-secondary { background: #e2e8f0; color: #334155; }
     .btn-danger{background:linear-gradient(90deg,#ef4444,#b91c1c);color:white}
     .btn-green{background:linear-gradient(90deg,#10b981,#06b6d4);color:white}
-    .spinner{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);border-top-color:white;animation:spin 1s linear infinite}
+    .spinner{width:20px;height:20px;border-radius:50%;border:2px solid rgba(125,125,125,0.2);border-top-color:var(--text);animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:50; opacity: 0; transition: opacity 0.3s ease; pointer-events:none;}
     .modal{min-width:280px;max-width:420px; opacity: 0; transform: scale(0.95); transition: all 0.3s ease;}
     .modal-backdrop.active { opacity: 1; pointer-events:auto; }
     .modal-backdrop.active .modal { opacity: 1; transform: scale(1); }
+    #event-modal .modal { max-width: 520px; }
 
     #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
     #notification-toast.show { opacity: 1; top: 30px; }
@@ -49,7 +68,7 @@
 
     .toggle-label { display: flex; align-items: center; justify-content: space-between; cursor: pointer; width: 100%; }
     .toggle-label input { display: none; }
-    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; background-color: rgba(255,255,255,0.1); border-radius: 22px; transition: background-color 0.2s; }
+    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; background-color: rgba(125,125,125,0.2); border-radius: 22px; transition: background-color 0.2s; }
     .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.2s; }
     .toggle-label input:checked + .toggle-switch { background-color: #4f46e5; }
     .toggle-label input:checked + .toggle-switch::after { transform: translateX(18px); }
@@ -72,10 +91,10 @@
 
   <div id="notification-toast"></div>
 
-  <div id="loading-overlay" class="screen active" style="background:linear-gradient(180deg, rgba(2,6,23,0.8), rgba(2,6,23,0.95));z-index:40">
+  <div id="loading-overlay" class="screen active" style="z-index:40">
     <div style="text-align:center">
       <div style="font-size:56px">🐺</div>
-      <h1 style="font-size:26px;margin:6px 0; color:white;">Who's Wolf?</h1>
+      <h1 style="font-size:26px;margin:6px 0;">Who's Wolf?</h1>
       <div class="spinner" style="width:32px; height:32px; border-width:3px; margin: 20px auto 12px auto;"></div>
       <div class="muted">Connecting...</div>
     </div>
@@ -101,6 +120,7 @@
             <h2 style="margin:0; font-size:22px;">Who's Wolf?</h2>
         </div>
         <div style="display:flex; align-items:center; gap:16px;">
+          <button id="theme-toggle-btn" class="btn btn-secondary p-2">🌓</button>
           <div id="welcome-container" style="text-align:right;">
             <div class="flex items-center gap-2">
               <h2 id="welcome-text" style="margin:0; font-size:18px;">Welcome</h2>
@@ -137,7 +157,7 @@
         <div style="display:flex;gap:16px">
           <div style="flex:1">
             <h4 style="margin:0 0 8px 0">Players (<span id="player-count">0</span>)</h4>
-            <div id="player-list" style="min-height:220px;max-height:220px;overflow:auto;border-radius:10px;padding:8px;background:rgba(255,255,255,0.01)"></div>
+            <div id="player-list" style="min-height:220px;max-height:220px;overflow:auto;border-radius:10px;padding:8px;background:rgba(125,125,125,0.05)"></div>
           </div>
           <div id="room-settings-panel" style="width:360px">
             <div class="card" style="padding:16px">
@@ -177,9 +197,12 @@
         <h2 id="game-phase-title" style="margin:0; font-size:22px;">Night 1</h2>
         <p id="game-phase-subtitle" class="muted" style="margin:0; font-size:14px;">The village is asleep...</p>
       </div>
-      <div style="text-align:center;">
-        <div id="game-timer" style="font-size:28px; font-weight:700;">00:45</div>
-        <div class="muted" style="font-size:12px;">TIME REMAINING</div>
+      <div class="flex items-center gap-4">
+        <button id="skip-vote-btn" class="btn btn-secondary hidden">Skip Vote</button>
+        <div style="text-align:center;">
+          <div id="game-timer" style="font-size:28px; font-weight:700;">00:45</div>
+          <div class="muted" style="font-size:12px;">TIME REMAINING</div>
+        </div>
       </div>
     </div>
 
@@ -196,7 +219,7 @@
         </div>
       </div>
 
-      <div id="game-main-content" class="card" style="padding:16px; flex:1; overflow-y: auto;">
+      <div id="game-main-content" class="card p-4 flex-1 overflow-y-auto grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 content-start">
       </div>
 
       <div class="card" style="padding:16px; width:320px; display:flex; flex-direction:column;">
@@ -367,6 +390,7 @@
     let gameTimerInterval = null;
     let presenceInterval = null;
     let localGameState = {};
+    let playerOrder = [];
 
     function setLobbyView(inRoom) {
         document.getElementById('pre-room-view').classList.toggle('hidden', inRoom);
@@ -519,6 +543,7 @@
         if(chatUnsub){ chatUnsub(); chatUnsub = null; }
         stopPresenceUpdates();
         currentRoomId = null;
+        playerOrder = [];
         if(gameTimerInterval) clearInterval(gameTimerInterval);
         try { window.history.replaceState({}, '', location.pathname); } catch (e) { console.warn("Could not update URL:", e); }
         setLobbyView(false);
@@ -549,7 +574,7 @@
       document.getElementById('player-count').textContent = playerIds.length;
       const isCurrentUserHost = roomData.hostId === currentUser.uid;
 
-      playerIds.forEach(pid => {
+      playerIds.sort((a,b) => players[a].nickname.localeCompare(players[b].nickname)).forEach(pid => {
         const p = players[pid];
         const el = document.createElement('div');
         el.className = 'flex justify-between items-center p-2 rounded-lg mb-2';
@@ -637,7 +662,7 @@
     }
     
     function processNightActions(roomData) {
-        let { players, turn } = roomData;
+        let { players, turn, devActions = {} } = roomData;
         let events = [];
         const wolfVotes = {};
         let doctorSaveTarget = null;
@@ -645,11 +670,9 @@
 
         Object.entries(players).forEach(([pid, p]) => {
             if (p.isAlive && p.actionTarget) {
-                if (p.role === 'werewolf') {
-                    wolfVotes[p.actionTarget] = (wolfVotes[p.actionTarget] || 0) + 1;
-                } else if (p.role === 'doctor') {
-                    doctorSaveTarget = p.actionTarget;
-                } else if (p.role === 'hunter' && !p.hasUsedAbility) {
+                if (p.role === 'werewolf') wolfVotes[p.actionTarget] = (wolfVotes[p.actionTarget] || 0) + 1;
+                else if (p.role === 'doctor') doctorSaveTarget = p.actionTarget;
+                else if (p.role === 'hunter' && !p.hasUsedAbility) {
                     hunterShotTarget = p.actionTarget;
                     players[pid].hasUsedAbility = true;
                 }
@@ -658,11 +681,20 @@
 
         let killedByWolvesId = Object.keys(wolfVotes).length > 0 ? Object.keys(wolfVotes).reduce((a, b) => wolfVotes[a] > wolfVotes[b] ? a : b) : null;
         const deaths = new Set();
-        if (killedByWolvesId && killedByWolvesId !== doctorSaveTarget) deaths.add(killedByWolvesId);
+        
+        // Developer actions override others
+        const devProtectTarget = devActions.protect;
+        (devActions.kill || []).forEach(targetId => deaths.add(targetId));
+
+        if (killedByWolvesId && killedByWolvesId !== doctorSaveTarget && killedByWolvesId !== devProtectTarget) {
+            deaths.add(killedByWolvesId);
+        } else if (killedByWolvesId && (killedByWolvesId === doctorSaveTarget || killedByWolvesId === devProtectTarget)) {
+            events.push("An attack was attempted, but the target was saved by a protector!");
+        }
         if (hunterShotTarget) deaths.add(hunterShotTarget);
         
         deaths.forEach(pid => {
-            if (players[pid].isAlive) { // Check if not already dead from another source
+            if (players[pid].isAlive) {
                 players[pid].isAlive = false;
                 events.push(`**${players[pid].nickname}** was found dead.`);
             }
@@ -677,7 +709,7 @@
             phase: 'day',
             players: players,
             announcement: { title: `Night ${turn} ended`, events: events, deaths: deaths.size > 0 },
-            phaseEndTime: Timestamp.fromMillis(Date.now() + 8000)
+            devActions: deleteField() // Clear dev actions
         };
     }
 
@@ -686,10 +718,15 @@
         let events = [];
         const votes = {};
         const voteDetails = {};
+        let skipVotes = 0;
 
         Object.entries(players).forEach(([voterId, p]) => {
             if (p.isAlive && p.votedFor) {
                 const targetId = p.votedFor;
+                if (targetId === '__SKIP__') {
+                    skipVotes++;
+                    return;
+                }
                 votes[targetId] = (votes[targetId] || 0) + 1;
                 if (!voteDetails[targetId]) voteDetails[targetId] = [];
                 voteDetails[targetId].push(p.nickname);
@@ -699,7 +736,7 @@
         let eliminatedPlayerId = null;
         if (Object.keys(votes).length > 0) {
             const sortedVotes = Object.entries(votes).sort(([,a],[,b]) => b-a);
-            if (sortedVotes.length === 1 || sortedVotes[0][1] > sortedVotes[1][1]) {
+            if (sortedVotes[0][1] > skipVotes && (sortedVotes.length === 1 || sortedVotes[0][1] > sortedVotes[1][1])) {
                 eliminatedPlayerId = sortedVotes[0][0];
             }
         }
@@ -709,13 +746,14 @@
             const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
             events.push(`**${p.nickname}**: ${votes[pid] || 0} votes ${voterList}`);
         });
+        events.push(`**Skipped**: ${skipVotes} votes`);
         events.push("<hr class='my-2 border-gray-700'>");
 
         if (eliminatedPlayerId) {
             players[eliminatedPlayerId].isAlive = false;
             events.push(`**${players[eliminatedPlayerId].nickname}** was eliminated. Their role was **${players[eliminatedPlayerId].role}**.`);
         } else {
-            events.push("The vote was tied. No one was eliminated.");
+            events.push("The vote was tied or skipped. No one was eliminated.");
         }
 
         Object.keys(players).forEach(pid => { players[pid].votedFor = null; });
@@ -726,7 +764,6 @@
             turn: turn + 1,
             players: players,
             announcement: { title: `Day ${turn} ended`, events: events, deaths: !!eliminatedPlayerId },
-            phaseEndTime: Timestamp.fromMillis(Date.now() + 10000)
         };
     }
 
@@ -748,6 +785,7 @@
                 if (!roomDoc.exists()) throw new Error("Room not found.");
                 const roomData = roomDoc.data();
                 const playerIds = Object.keys(roomData.players);
+                playerOrder = [...playerIds].sort((a,b) => roomData.players[a].nickname.localeCompare(roomData.players[b].nickname));
                 const settings = roomData.settings;
                 let roles = Array(settings.numWerewolves).fill('werewolf');
                 if (settings.includeSeer) roles.push('seer');
@@ -762,7 +800,7 @@
                 });
                 transaction.update(roomRef, {
                     state: 'role_reveal', players: updatedPlayers, turn: 1, phase: 'night',
-                    phaseEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 seconds for role reveal
+                    phaseEndTime: Timestamp.fromMillis(Date.now() + 5000),
                     processing: false,
                 });
             });
@@ -817,12 +855,24 @@
             setTimeout(() => document.body.classList.remove('shake'), 500);
         }
         
+        const ANNOUNCEMENT_DURATION = 12000; // 12 seconds
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        const hostTimeout = setTimeout(async () => {
+            if (localGameState.hostId === currentUser.uid) {
+                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+                await updateDoc(roomRef, { state: roomData.phase, phaseEndTime: endTime, announcement: null });
+            }
+        }, ANNOUNCEMENT_DURATION);
+
         document.getElementById('btn-close-event').onclick = async () => {
+            clearTimeout(hostTimeout);
             showModal('event-modal', false);
-            const roomRef = doc(db, 'rooms', currentRoomId);
-            const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
-            const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
-            await updateDoc(roomRef, { state: roomData.phase, phaseEndTime: endTime, announcement: null });
+            if (localGameState.hostId === currentUser.uid) {
+                const duration = roomData.phase === 'day' ? roomData.settings.dayDuration : roomData.settings.nightDuration;
+                const endTime = Timestamp.fromMillis(Date.now() + duration * 1000);
+                await updateDoc(roomRef, { state: roomData.phase, phaseEndTime: endTime, announcement: null });
+            }
         };
     }
     
@@ -838,6 +888,7 @@
         
         document.getElementById('game-phase-title').textContent = `${isNight ? 'Night' : 'Day'} ${roomData.turn}`;
         document.getElementById('game-phase-subtitle').textContent = isNight ? "Make your move..." : "Discuss and vote!";
+        document.getElementById('skip-vote-btn').classList.toggle('hidden', isNight || !myData.isAlive || myData.votedFor);
 
         const chatInput = document.getElementById('chat-input');
         const chatSend = document.getElementById('chat-send');
@@ -850,13 +901,14 @@
     function renderPlayerCards(roomData) {
         const mainContent = document.getElementById('game-main-content');
         mainContent.innerHTML = '';
-        mainContent.className = 'card p-4 flex-1 overflow-y-auto grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
         const myData = roomData.players[currentUser.uid];
 
-        Object.entries(roomData.players).forEach(([pid, p]) => {
+        playerOrder.forEach(pid => {
+            const p = roomData.players[pid];
+            if (!p) return; // Player might have left
             const card = document.createElement('div');
             card.className = 'p-4 rounded-lg flex flex-col items-center justify-between text-center';
-            card.style.background = 'rgba(255,255,255,0.02)';
+            card.style.background = 'var(--card)';
             card.style.border = '2px solid transparent';
             card.style.aspectRatio = '1 / 1.2';
 
@@ -869,17 +921,21 @@
                     <strong class="mt-2 block">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
-                <div class="flex gap-2 mt-3 text-2xl"></div>`;
+                <div class="flex flex-wrap justify-center gap-2 mt-3 text-2xl"></div>`;
             
             const actionsContainer = card.querySelector('.flex');
-            const canAct = (myData.isAlive || currentUser.isDeveloper) && p.isAlive && !isMe;
             
-            if (roomData.phase === 'night' && canAct) {
+            if (roomData.phase === 'night') {
                 if (currentUser.isDeveloper) {
-                    actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
-                    actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}', true)">👁️</button>`;
-                    actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
-                } else if (!myData.actionTarget) {
+                    if (p.isAlive && !isMe) {
+                        actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performDevAction('${pid}', 'kill')">🔪</button>`;
+                        actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performDevAction('${pid}', 'protect')">🛡️</button>`;
+                    }
+                    actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performDevAction('${pid}', 'seer')">👁️</button>`;
+                    if (!p.isAlive) {
+                        actionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
+                    }
+                } else if (p.isAlive && !isMe && myData.isAlive && !myData.actionTarget) {
                     if (myData.role === 'werewolf') actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
                     if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}')">👁️</button>`;
                     if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
@@ -900,7 +956,9 @@
         list.innerHTML = '';
         const myData = roomData.players[currentUser.uid];
 
-        Object.entries(roomData.players).forEach(([pid, p]) => {
+        playerOrder.forEach(pid => {
+            const p = roomData.players[pid];
+            if (!p) return;
             const el = document.createElement('div');
             el.className = 'p-2 rounded-lg mb-2 flex justify-between items-center transition-all';
             const isMe = pid === currentUser.uid;
@@ -909,14 +967,14 @@
             
             let roleIndicator = '';
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
-            if ((!p.isAlive && currentUser.isDeveloper) || (myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf') || isMe || currentUser.isDeveloper) {
+            if (currentUser.isDeveloper || isMe || (myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
             }
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
             if (isDev) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
             el.innerHTML = `<div><span class="mr-2">${p.isAlive ? '🙂' : '👻'}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
             if (!p.isAlive) el.style.opacity = '0.5';
-            if (isMe) el.style.background = 'rgba(255,255,255,0.05)';
+            if (isMe) el.style.background = 'rgba(125,125,125,0.1)';
             list.appendChild(el);
         });
         document.getElementById('developer-panel').classList.toggle('hidden', !currentUser.isDeveloper);
@@ -945,8 +1003,9 @@
         showModal('event-modal', true);
     }
 
-    async function performNightAction(targetId, isSeerAction = false) {
-        if (isSeerAction) {
+    async function performNightAction(targetId) {
+        const myData = localGameState.players[currentUser.uid];
+        if (myData.role === 'seer') {
             const targetPlayer = localGameState.players[targetId];
             document.getElementById('seer-result-body').textContent = `${targetPlayer.nickname} is a ${targetPlayer.role}.`;
             showModal('seer-result-modal', true);
@@ -956,6 +1015,35 @@
             const roomRef = doc(db, 'rooms', currentRoomId);
             await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: targetId });
         }
+    }
+
+    async function performDevAction(targetId, actionType) {
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        showToast(`Dev Action: ${actionType} on ${localGameState.players[targetId].nickname}`);
+        
+        if (actionType === 'revive') {
+            return await updateDoc(roomRef, { [`players.${targetId}.isAlive`]: true });
+        }
+        if (actionType === 'seer') {
+            const targetPlayer = localGameState.players[targetId];
+            document.getElementById('seer-result-body').textContent = `${targetPlayer.nickname} is a ${targetPlayer.role}.`;
+            return showModal('seer-result-modal', true);
+        }
+        
+        // For kill/protect, we add to a temporary field for the host to process
+        await runTransaction(db, async (transaction) => {
+            const roomDoc = await transaction.get(roomRef);
+            if (!roomDoc.exists()) return;
+            const currentActions = roomDoc.data().devActions || {};
+            if (actionType === 'kill') {
+                const killList = currentActions.kill || [];
+                if (!killList.includes(targetId)) killList.push(targetId);
+                currentActions.kill = killList;
+            } else if (actionType === 'protect') {
+                currentActions.protect = targetId;
+            }
+            transaction.update(roomRef, { devActions: currentActions });
+        });
     }
 
     async function voteForPlayer(targetId) {
@@ -998,14 +1086,23 @@
             title.textContent = `Day ${turn}`;
         } else {
             overlay.className = 'night';
-            icon.textContent = '🌙';
+            icon.textContent = '�';
             title.textContent = `Night ${turn}`;
         }
         overlay.classList.add('visible');
         setTimeout(() => overlay.classList.remove('visible'), 2000);
     }
 
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.body.classList.add('light-theme');
+        } else {
+            document.body.classList.remove('light-theme');
+        }
+    }
+
     window.performNightAction = performNightAction;
+    window.performDevAction = performDevAction;
     window.voteForPlayer = voteForPlayer;
 
     document.getElementById('btn-create-room').addEventListener('click', createRoom);
@@ -1018,6 +1115,7 @@
     document.getElementById('btn-start').addEventListener('click', startGame);
     document.getElementById('chat-send').addEventListener('click', sendMessage);
     document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    document.getElementById('skip-vote-btn').addEventListener('click', () => voteForPlayer('__SKIP__'));
     document.getElementById('dev-end-game').addEventListener('click', async () => {
         if (confirm("End game?")) {
             const roomRef = doc(db, 'rooms', currentRoomId);
@@ -1029,10 +1127,19 @@
         }
     });
 
+    document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+        const isLight = document.body.classList.contains('light-theme');
+        const newTheme = isLight ? 'dark' : 'light';
+        localStorage.setItem('whoswolf-theme', newTheme);
+        applyTheme(newTheme);
+    });
+
     document.getElementById('btn-how-to-play').addEventListener('click', () => showModal('rules-modal-backdrop', true));
     document.getElementById('btn-close-rules').addEventListener('click', () => showModal('rules-modal-backdrop', false));
 
     (function init(){
+      const savedTheme = localStorage.getItem('whoswolf-theme') || 'dark';
+      applyTheme(savedTheme);
       initializeFirebase();
       const roomCode = new URLSearchParams(location.search).get('room');
       if (roomCode) document.getElementById('join-code').value = roomCode.toUpperCase();
