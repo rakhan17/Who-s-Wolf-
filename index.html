@@ -103,7 +103,7 @@
 
   <div id="notification-toast"></div>
 
-  <div id="loading-overlay" class="screen active" data-screen-type="main" style="z-index:40">
+  <div id="loading-overlay" class="screen active" data-screen-type="overlay" style="z-index:40; background: rgba(11, 18, 32, 0.8);">
     <div class="text-center">
       <div class="text-6xl">🐺</div>
       <h1 class="text-3xl my-2">Who's Wolf?</h1>
@@ -224,7 +224,6 @@
           <h3 class="m-0 mb-2">Players</h3>
           <div id="game-player-list" class="overflow-y-auto flex-1"></div>
         </div>
-        <!-- **FIX**: Mobile layout for dev tools and chat -->
         <div class="flex lg:flex-col gap-4">
             <div id="developer-panel" class="card hidden p-4 flex-1">
               <h4 class="m-0 mb-2 text-red-400">Developer Tools</h4>
@@ -305,8 +304,9 @@
         if (overlayEl) overlayEl.classList.toggle('active', show);
     }
 
-    const loadingOverlay = document.getElementById('loading-overlay');
-    function setLoading(on){ loadingOverlay.classList.toggle('active', on); }
+    function setLoading(on){ 
+        showOverlay('loading-overlay', on);
+    }
     function showToast(msg, err=false){
       const t = document.getElementById('notification-toast');
       t.textContent = msg;
@@ -372,8 +372,12 @@
                 } else {
                     setActiveScreen('nickname-screen');
                 }
+                setLoading(false);
             } else {
-                try { await signInAnonymously(auth); } catch (error) {
+                try { 
+                    setLoading(true);
+                    await signInAnonymously(auth); 
+                } catch (error) {
                     console.error("Anonymous Sign In Error:", error);
                     showToast('Failed to connect to server.', true);
                 }
@@ -683,7 +687,6 @@
         if ((state === 'announcement' || state === 'role_reveal') && announcementEndTime && Timestamp.now().seconds > announcementEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             
-            // **FIX**: Check win condition *after* an announcement phase, before starting the next game phase.
             const winState = checkWinCondition(players);
             if (winState) {
                 await updateDoc(roomRef, { state: 'game_over', gameOver: winState, processing: false });
@@ -729,59 +732,62 @@
         const wolfVotes = {};
         let doctorSaveTarget = null;
         let hunterShotTarget = null;
+        let updatedPlayers = JSON.parse(JSON.stringify(players)); // Deep copy
 
-        Object.entries(players).forEach(([pid, p]) => {
+        Object.entries(updatedPlayers).forEach(([pid, p]) => {
             if (p.isAlive && p.actionTarget) {
                 if (p.role === 'werewolf') wolfVotes[p.actionTarget] = (wolfVotes[p.actionTarget] || 0) + 1;
                 else if (p.role === 'doctor') doctorSaveTarget = p.actionTarget;
                 else if (p.role === 'hunter' && !p.hasUsedAbility) {
                     hunterShotTarget = p.actionTarget;
-                    players[pid].hasUsedAbility = true;
+                    updatedPlayers[pid].hasUsedAbility = true;
                 }
             }
         });
 
         let killedByWolvesId = Object.keys(wolfVotes).length > 0 ? Object.keys(wolfVotes).reduce((a, b) => wolfVotes[a] > wolfVotes[b] ? a : b) : null;
-        const deaths = new Set();
         
-        const devProtectTarget = devActions.protect;
-        (devActions.kill || []).forEach(targetId => deaths.add(targetId));
+        // **FIX**: Consolidate all potential deaths first
+        const potentialDeaths = new Set();
+        if (killedByWolvesId) potentialDeaths.add(killedByWolvesId);
+        if (hunterShotTarget) potentialDeaths.add(hunterShotTarget);
+        (devActions.kill || []).forEach(targetId => potentialDeaths.add(targetId));
 
-        if (killedByWolvesId && killedByWolvesId !== doctorSaveTarget && killedByWolvesId !== devProtectTarget) {
-            deaths.add(killedByWolvesId);
-        } else if (killedByWolvesId && (killedByWolvesId === doctorSaveTarget || killedByWolvesId === devProtectTarget)) {
-            events.push("An attack was attempted, but the target was saved by a protector!");
-        }
-        if (hunterShotTarget) deaths.add(hunterShotTarget);
+        const devProtectTarget = devActions.protect;
         
-        deaths.forEach(pid => {
-            if (players[pid] && players[pid].isAlive) {
-                players[pid].isAlive = false;
-                events.push(`**${getDisplayName(players[pid])}** was found dead.`);
+        potentialDeaths.forEach(pid => {
+            if (pid === doctorSaveTarget || pid === devProtectTarget) {
+                events.push(`An attack on **${getDisplayName(updatedPlayers[pid])}** was thwarted by a protector!`);
+            } else {
+                if (updatedPlayers[pid] && updatedPlayers[pid].isAlive) {
+                    updatedPlayers[pid].isAlive = false;
+                    events.push(`**${getDisplayName(updatedPlayers[pid])}** was found dead.`);
+                }
             }
         });
 
         if (events.length === 0) events.push("The night was quiet... No one died.");
         
-        Object.keys(players).forEach(pid => { players[pid].actionTarget = null; });
+        Object.keys(updatedPlayers).forEach(pid => { updatedPlayers[pid].actionTarget = null; });
 
         return {
             state: 'announcement',
             phase: 'day',
-            players: players,
-            announcement: { title: `Night ${turn} ended`, events: events, deaths: deaths.size > 0 },
+            players: updatedPlayers,
+            announcement: { title: `Night ${turn} ended`, events: events, deaths: potentialDeaths.size > 0 },
             devActions: deleteField()
         };
     }
 
     function processDayVotes(roomData) {
         let { players, turn } = roomData;
+        let updatedPlayers = JSON.parse(JSON.stringify(players));
         let events = [];
         const votes = {};
         const voteDetails = {};
         let skipVotes = 0;
 
-        Object.entries(players).forEach(([voterId, p]) => {
+        Object.entries(updatedPlayers).forEach(([voterId, p]) => {
             if (p.isAlive && p.votedFor) {
                 const targetId = p.votedFor;
                 if (targetId === '__SKIP__') {
@@ -803,9 +809,8 @@
         }
 
         events.push("The votes are in:");
-        // **FIX**: Use stable playerOrder for consistent display in modal
         playerOrder.forEach(pid => {
-            const p = players[pid];
+            const p = updatedPlayers[pid];
             if (p && p.isAlive) {
                 const voterList = voteDetails[pid] ? `(voted by ${voteDetails[pid].join(', ')})` : '';
                 events.push(`**${getDisplayName(p)}**: ${votes[pid] || 0} votes ${voterList}`);
@@ -815,19 +820,19 @@
         events.push("<hr class='my-2 border-gray-700'>");
 
         if (eliminatedPlayerId) {
-            players[eliminatedPlayerId].isAlive = false;
-            events.push(`**${getDisplayName(players[eliminatedPlayerId])}** was eliminated. Their role was **${players[eliminatedPlayerId].role}**.`);
+            updatedPlayers[eliminatedPlayerId].isAlive = false;
+            events.push(`**${getDisplayName(updatedPlayers[eliminatedPlayerId])}** was eliminated. Their role was **${updatedPlayers[eliminatedPlayerId].role}**.`);
         } else {
             events.push("The vote was tied or skipped. No one was eliminated.");
         }
 
-        Object.keys(players).forEach(pid => { players[pid].votedFor = null; });
+        Object.keys(updatedPlayers).forEach(pid => { updatedPlayers[pid].votedFor = null; });
 
         return {
             state: 'announcement',
             phase: 'night',
             turn: turn + 1,
-            players: players,
+            players: updatedPlayers,
             announcement: { title: `Day ${turn} ended`, events: events, deaths: !!eliminatedPlayerId },
         };
     }
@@ -997,28 +1002,30 @@
                     <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
-                <div class="flex flex-wrap justify-center gap-2 mt-2 text-2xl"></div>`;
+                <div class="dev-actions-grid grid grid-cols-2 gap-1 mt-2 text-xl"></div>
+                <div class="player-actions-container flex flex-wrap justify-center gap-2 mt-2"></div>`;
             
-            const actionsContainer = card.querySelector('.flex');
+            const devActionsContainer = card.querySelector('.dev-actions-grid');
+            const playerActionsContainer = card.querySelector('.player-actions-container');
             
             if (roomData.state === 'night') {
                 if (currentUser.isDeveloper) {
                     if (p.isAlive && !isMe) {
-                        actionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performDevAction('${pid}', 'kill')">🔪</button>`;
-                        actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performDevAction('${pid}', 'protect')">🛡️</button>`;
+                        devActionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performDevAction('${pid}', 'kill')">🔪</button>`;
+                        devActionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performDevAction('${pid}', 'protect')">🛡️</button>`;
                     }
-                    actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performDevAction('${pid}', 'seer')">👁️</button>`;
-                    // **FIX**: Allow developer to revive themselves
+                    devActionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performDevAction('${pid}', 'seer')">👁️</button>`;
                     if (!p.isAlive) {
-                        actionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
+                        devActionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
                     }
-                } else if (p.isAlive && !isMe && myData.isAlive) {
-                    if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) actionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1" onclick="performNightAction('${pid}')">🔪</button>`;
-                    if (myData.role === 'seer') actionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performNightAction('${pid}')">👁️</button>`;
-                    if (myData.role === 'doctor') actionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performNightAction('${pid}')">🛡️</button>`;
+                } 
+                if (p.isAlive && !isMe && myData.isAlive) {
+                    if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) playerActionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🔪</button>`;
+                    if (myData.role === 'seer') playerActionsContainer.innerHTML += `<button title="See Role" class="p-1 text-2xl" onclick="performNightAction('${pid}')">👁️</button>`;
+                    if (myData.role === 'doctor') playerActionsContainer.innerHTML += `<button title="Protect" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🛡️</button>`;
                 }
             } else if (roomData.state === 'day' && myData.isAlive && p.isAlive) {
-                 if (!isMe) actionsContainer.innerHTML += `<button class="btn btn-primary px-3 py-1 text-xs" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
+                 if (!isMe) playerActionsContainer.innerHTML += `<button class="btn btn-primary px-3 py-1 text-xs" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
             }
             
             if (!p.isAlive) card.style.opacity = '0.5';
@@ -1112,7 +1119,6 @@
         const roomRef = doc(db, 'rooms', currentRoomId);
         showToast(`Dev Action: ${actionType} on ${getDisplayName(localGameState.players[targetId])}`);
         
-        // **FIX**: Optimistic UI update for instant feedback
         if (actionType === 'kill' || actionType === 'protect') {
             if (!localGameState.devActions) localGameState.devActions = {};
             if (actionType === 'kill') {
@@ -1126,7 +1132,7 @@
             } else { // protect
                 localGameState.devActions.protect = localGameState.devActions.protect === targetId ? null : targetId;
             }
-            renderPlayerCards(localGameState); // Re-render immediately with local state
+            renderPlayerCards(localGameState); 
         }
 
         if (actionType === 'revive') {
@@ -1263,6 +1269,7 @@
     (function init(){
       const savedTheme = localStorage.getItem('whoswolf-theme') || 'dark';
       applyTheme(savedTheme);
+      setLoading(true);
       initializeFirebase();
       const roomCode = new URLSearchParams(location.search).get('room');
       if (roomCode) document.getElementById('join-code').value = roomCode.toUpperCase();
