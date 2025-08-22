@@ -732,7 +732,7 @@
         const wolfVotes = {};
         let doctorSaveTarget = null;
         let hunterShotTarget = null;
-        let updatedPlayers = JSON.parse(JSON.stringify(players)); // Deep copy
+        let updatedPlayers = JSON.parse(JSON.stringify(players));
 
         Object.entries(updatedPlayers).forEach(([pid, p]) => {
             if (p.isAlive && p.actionTarget) {
@@ -747,7 +747,6 @@
 
         let killedByWolvesId = Object.keys(wolfVotes).length > 0 ? Object.keys(wolfVotes).reduce((a, b) => wolfVotes[a] > wolfVotes[b] ? a : b) : null;
         
-        // **FIX**: Consolidate all potential deaths first
         const potentialDeaths = new Set();
         if (killedByWolvesId) potentialDeaths.add(killedByWolvesId);
         if (hunterShotTarget) potentialDeaths.add(hunterShotTarget);
@@ -1019,10 +1018,20 @@
                         devActionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
                     }
                 } 
+                
+                // **FIX**: Prevent duplicate action buttons for developers
+                const isDevWithKillRole = currentUser.isDeveloper && (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility));
+
                 if (p.isAlive && !isMe && myData.isAlive) {
-                    if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) playerActionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🔪</button>`;
-                    if (myData.role === 'seer') playerActionsContainer.innerHTML += `<button title="See Role" class="p-1 text-2xl" onclick="performNightAction('${pid}')">👁️</button>`;
-                    if (myData.role === 'doctor') playerActionsContainer.innerHTML += `<button title="Protect" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🛡️</button>`;
+                    if ((myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) && !isDevWithKillRole) {
+                        playerActionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🔪</button>`;
+                    }
+                    if (myData.role === 'seer' && !currentUser.isDeveloper) {
+                        playerActionsContainer.innerHTML += `<button title="See Role" class="p-1 text-2xl" onclick="performNightAction('${pid}')">👁️</button>`;
+                    }
+                    if (myData.role === 'doctor' && !currentUser.isDeveloper) {
+                        playerActionsContainer.innerHTML += `<button title="Protect" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🛡️</button>`;
+                    }
                 }
             } else if (roomData.state === 'day' && myData.isAlive && p.isAlive) {
                  if (!isMe) playerActionsContainer.innerHTML += `<button class="btn btn-primary px-3 py-1 text-xs" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
