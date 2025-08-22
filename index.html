@@ -16,6 +16,8 @@
       --border: rgba(148, 163, 184, 0.08);
       --card-gradient-start: rgba(255, 255, 255, 0.02);
       --card-gradient-end: rgba(255, 255, 255, 0.01);
+      --team-wolf: #ef4444;
+      --team-villager: #3b82f6;
     }
     .light-theme {
       --bg: #f1f5f9;
@@ -37,7 +39,7 @@
     @keyframes pulse-bg-light { 0% { background-color: var(--bg); } 50% { background-color: #e2e8f0; } 100% { background-color: var(--bg); } }
 
     body.timer-low-tension::before { content: ''; position: fixed; inset: 0; box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.5); pointer-events: none; animation: pulse-red-glow 1.5s infinite; z-index: 1000; }
-    @keyframes pulse-red-glow { 0% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.3); } 70% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.6); } 100% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.3); } }
+    @keyframes pulse-red-glow { 0% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.3); opacity: 0.7; } 70% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.6); opacity: 1; } 100% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.3); opacity: 0.7; } }
 
     .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:1rem; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
@@ -64,6 +66,7 @@
     .modal-backdrop.active { opacity: 1; pointer-events:auto; }
     .modal-backdrop.active .modal { opacity: 1; transform: scale(1); }
     #event-modal .modal { max-width: 520px; }
+    #rules-modal-backdrop .modal { max-width: 640px; }
 
     #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
     #notification-toast.show { opacity: 1; top: 30px; }
@@ -79,6 +82,9 @@
     .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background-color: white; top: 2px; left: 2px; transition: transform 0.2s; }
     .toggle-label input:checked + .toggle-switch { background-color: #4f46e5; }
     .toggle-label input:checked + .toggle-switch::after { transform: translateX(18px); }
+
+    .team-wolf { color: var(--team-wolf); }
+    .team-villager { color: var(--team-villager); }
 
     .targeted-vote { border: 2px solid #7c3aed !important; animation: pulse-vote 1.5s infinite; }
     @keyframes pulse-vote { 0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); } 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } }
@@ -187,9 +193,13 @@
                   <input id="setting-wolves" type="number" min="1" value="1" class="input-field setting-input w-full mt-1"/>
                 </div>
                 <div class="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <label class="toggle-label muted text-sm">Seer <input id="setting-seer" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
-                  <label class="toggle-label muted text-sm">Doctor <input id="setting-doctor" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
-                  <label class="toggle-label muted text-sm">Hunter <input id="setting-hunter" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-villager">Seer</span> <input id="setting-seer" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-villager">Doctor</span> <input id="setting-doctor" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-villager">Hunter</span> <input id="setting-hunter" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-villager">Mayor</span> <input id="setting-mayor" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-villager">Wild Child</span> <input id="setting-wildchild" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-wolf">Alpha Wolf</span> <input id="setting-alphawolf" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm"><span class="team-wolf">Traitor</span> <input id="setting-traitor" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
                   <label class="toggle-label muted text-sm">Reveal Role <input id="setting-reveal-role" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
                 </div>
                 <div class="grid grid-cols-2 gap-4 pt-2">
@@ -219,6 +229,7 @@
       </div>
       <div class="flex items-center gap-4">
         <button id="skip-vote-btn" class="btn btn-secondary hidden">Skip Vote</button>
+        <button id="reveal-mayor-btn" class="btn btn-primary hidden">Reveal as Mayor</button>
         <div class="text-center">
           <div id="game-timer" class="text-3xl font-bold transition-colors duration-300">00:45</div>
           <div id="timer-subtitle" class="muted text-xs">TIME REMAINING</div>
@@ -285,12 +296,16 @@
         <h2 class="mt-0">How to Play Who's Wolf</h2>
         <p class="muted">The game is divided into two phases: Night and Day. The goal of the Villagers is to eliminate all Werewolves. The goal of the Werewolves is to outnumber the Villagers.</p>
         <h3 class="mb-2">Roles</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><strong>🐺 Werewolf</strong><p class="muted text-sm">During the night, wake up with fellow werewolves to choose one player to eliminate.</p></div>
             <div><strong>👱 Villager</strong><p class="muted text-sm">During the day, discuss and vote to eliminate a player you suspect is a werewolf.</p></div>
-            <div><strong>👁️ Seer</strong><p class="muted text-sm">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
-            <div><strong>🧑‍⚕️ Doctor</strong><p class="muted text-sm">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
-            <div><strong>👮 Hunter</strong><p class="muted text-sm">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
+            <div><strong>👁️ <span class="team-villager">Seer</span></strong><p class="muted text-sm">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
+            <div><strong>🧑‍⚕️ <span class="team-villager">Doctor</span></strong><p class="muted text-sm">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
+            <div><strong>👮 <span class="team-villager">Hunter</span></strong><p class="muted text-sm">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
+            <div><strong>🎖️ <span class="team-villager">Mayor</span></strong><p class="muted text-sm">Your vote counts as two. You can choose to reveal your role during the day to make your influence known.</p></div>
+            <div><strong>feral <span class="team-villager">Wild Child</span></strong><p class="muted text-sm">On night 1, choose a role model. If they die, you become a Werewolf.</p></div>
+            <div><strong>🐺👑 <span class="team-wolf">Alpha Wolf</span></strong><p class="muted text-sm">You are a Werewolf, but the Seer sees you as a Villager.</p></div>
+            <div><strong>🎭 <span class="team-wolf">Traitor</span></strong><p class="muted text-sm">You are a Villager who knows the Werewolves and wins with them. The Seer sees you as a Villager.</p></div>
         </div>
         <div class="text-right mt-5">
             <button id="btn-close-rules" class="btn btn-primary">Got it!</button>
@@ -438,6 +453,7 @@
     let presenceInterval = null;
     let localGameState = {};
     let playerOrder = [];
+    let isProcessingPhase = false;
 
     function setLobbyView(inRoom) {
         document.getElementById('pre-room-view').classList.toggle('hidden', inRoom);
@@ -652,7 +668,7 @@
         list.appendChild(el);
       });
 
-      document.getElementById('room-settings-panel').style.display = isCurrentUserHost ? 'block' : 'none';
+      document.getElementById('room-settings-panel').style.display = 'block'; // Always show
       document.getElementById('btn-start').classList.toggle('hidden', !isCurrentUserHost || playerIds.length < 3);
       updateSettingsUI(roomData.settings, !isCurrentUserHost);
     }
@@ -663,6 +679,10 @@
             includeSeer: document.getElementById('setting-seer').checked,
             includeDoctor: document.getElementById('setting-doctor').checked,
             includeHunter: document.getElementById('setting-hunter').checked,
+            includeMayor: document.getElementById('setting-mayor').checked,
+            includeWildChild: document.getElementById('setting-wildchild').checked,
+            includeAlphaWolf: document.getElementById('setting-alphawolf').checked,
+            includeTraitor: document.getElementById('setting-traitor').checked,
             revealRoleOnDeath: document.getElementById('setting-reveal-role').checked,
             dayDuration: parseInt(document.getElementById('setting-day').value || 60),
             nightDuration: parseInt(document.getElementById('setting-night').value || 45)
@@ -674,7 +694,11 @@
         document.getElementById('setting-seer').checked = settings.includeSeer;
         document.getElementById('setting-doctor').checked = settings.includeDoctor;
         document.getElementById('setting-hunter').checked = settings.includeHunter;
-        document.getElementById('setting-reveal-role').checked = settings.revealRoleOnDeath ?? true; // Default to true if not set
+        document.getElementById('setting-mayor').checked = settings.includeMayor ?? false;
+        document.getElementById('setting-wildchild').checked = settings.includeWildChild ?? false;
+        document.getElementById('setting-alphawolf').checked = settings.includeAlphaWolf ?? false;
+        document.getElementById('setting-traitor').checked = settings.includeTraitor ?? false;
+        document.getElementById('setting-reveal-role').checked = settings.revealRoleOnDeath ?? true;
         document.getElementById('setting-day').value = settings.dayDuration;
         document.getElementById('setting-night').value = settings.nightDuration;
         document.querySelectorAll('.setting-input').forEach(input => input.disabled = disableInputs);
@@ -718,6 +742,23 @@
             return;
         }
 
+        if (state === 'day') {
+            const alivePlayers = Object.values(players).filter(p => p.isAlive);
+            const allVoted = alivePlayers.every(p => p.votedFor);
+            if (allVoted) {
+                 // All votes are in, proceed immediately
+                 await updateDoc(roomRef, { processing: true });
+                 const nextStateData = processDayVotes(roomData);
+                 const ANNOUNCEMENT_DURATION_MS = 12000;
+                 await updateDoc(roomRef, { 
+                     ...nextStateData, 
+                     announcementEndTime: Timestamp.fromMillis(Date.now() + ANNOUNCEMENT_DURATION_MS),
+                     processing: false 
+                 });
+                 return;
+            }
+        }
+
         if ((state === 'night' || state === 'day') && phaseEndTime && Timestamp.now().seconds > phaseEndTime.seconds) {
             await updateDoc(roomRef, { processing: true });
             let nextStateData = {};
@@ -745,6 +786,7 @@
         let hunterShotTarget = null;
         let updatedPlayers = JSON.parse(JSON.stringify(players));
         const revealRole = settings.revealRoleOnDeath ?? true;
+        let wildChildChanged = null;
 
         Object.entries(updatedPlayers).forEach(([pid, p]) => {
             if (p.isAlive && p.actionTarget) {
@@ -777,9 +819,21 @@
                         deathMessage += ` Their role was **${updatedPlayers[pid].role}**.`;
                     }
                     events.push(deathMessage);
+
+                    // Wild Child Check
+                    Object.entries(updatedPlayers).forEach(([p_id, p_data]) => {
+                        if (p_data.role === 'wildChild' && p_data.roleModel === pid) {
+                            updatedPlayers[p_id].role = 'werewolf';
+                            wildChildChanged = p_id;
+                        }
+                    });
                 }
             }
         });
+
+        if (wildChildChanged) {
+            events.push(`Devastated by their role model's death, **${getDisplayName(updatedPlayers[wildChildChanged])}** has joined the werewolves!`);
+        }
 
         if (events.length === 0) events.push("The night was quiet... No one died.");
         
@@ -802,6 +856,7 @@
         const voteDetails = {};
         let skipVotes = 0;
         const revealRole = settings.revealRoleOnDeath ?? true;
+        let wildChildChanged = null;
 
         Object.entries(updatedPlayers).forEach(([voterId, p]) => {
             if (p.isAlive && p.votedFor) {
@@ -810,9 +865,10 @@
                     skipVotes++;
                     return;
                 }
-                votes[targetId] = (votes[targetId] || 0) + 1;
+                const voteWeight = (p.role === 'mayor' && p.isMayorRevealed) ? 2 : 1;
+                votes[targetId] = (votes[targetId] || 0) + voteWeight;
                 if (!voteDetails[targetId]) voteDetails[targetId] = [];
-                voteDetails[targetId].push(getDisplayName(p));
+                voteDetails[targetId].push(getDisplayName(p) + (voteWeight > 1 ? ' (x2)' : ''));
             }
         });
 
@@ -842,8 +898,20 @@
                 eliminationMessage += ` Their role was **${updatedPlayers[eliminatedPlayerId].role}**.`;
             }
             events.push(eliminationMessage);
+
+            // Wild Child Check
+            Object.entries(updatedPlayers).forEach(([p_id, p_data]) => {
+                if (p_data.role === 'wildChild' && p_data.roleModel === eliminatedPlayerId) {
+                    updatedPlayers[p_id].role = 'werewolf';
+                    wildChildChanged = p_id;
+                }
+            });
         } else {
             events.push("The vote was tied or skipped. No one was eliminated.");
+        }
+
+        if (wildChildChanged) {
+            events.push(`Devastated by their role model's death, **${getDisplayName(updatedPlayers[wildChildChanged])}** has joined the werewolves!`);
         }
 
         Object.keys(updatedPlayers).forEach(pid => { updatedPlayers[pid].votedFor = null; });
@@ -860,9 +928,13 @@
     function checkWinCondition(players) {
         const alivePlayers = Object.values(players).filter(p => p.isAlive);
         const aliveWolves = alivePlayers.filter(p => p.role === 'werewolf');
-        const aliveVillagers = alivePlayers.filter(p => p.role !== 'werewolf');
+        const aliveTraitors = alivePlayers.filter(p => p.role === 'traitor');
+        const aliveGoodPlayers = alivePlayers.filter(p => p.role !== 'werewolf' && p.role !== 'traitor');
+
+        const wolfTeamSize = aliveWolves.length + aliveTraitors.length;
+
         if (aliveWolves.length === 0) return { winningTeam: "Villagers", reason: "All werewolves have been eliminated!", players };
-        if (aliveWolves.length >= aliveVillagers.length) return { winningTeam: "Werewolves", reason: "The werewolves have taken over the village!", players };
+        if (wolfTeamSize >= aliveGoodPlayers.length) return { winningTeam: "Werewolves", reason: "The werewolves have taken over the village!", players };
         return null;
     }
 
@@ -877,19 +949,30 @@
                 const playerIds = Object.keys(roomData.players);
                 const settings = roomData.settings;
                 
-                const rolesToAssign = [];
-                for (let i = 0; i < settings.numWerewolves; i++) {
-                    rolesToAssign.push('werewolf');
-                }
+                let rolesToAssign = [];
+                // Add special roles based on settings
                 if (settings.includeSeer) rolesToAssign.push('seer');
                 if (settings.includeDoctor) rolesToAssign.push('doctor');
                 if (settings.includeHunter) rolesToAssign.push('hunter');
+                if (settings.includeMayor) rolesToAssign.push('mayor');
+                if (settings.includeWildChild) rolesToAssign.push('wildChild');
+                if (settings.includeTraitor) rolesToAssign.push('traitor');
+                
+                // Add werewolves
+                for (let i = 0; i < settings.numWerewolves; i++) {
+                    rolesToAssign.push('werewolf');
+                }
+
+                // Fill the rest with villagers
                 while (rolesToAssign.length < playerIds.length) {
                     rolesToAssign.push('villager');
                 }
                 rolesToAssign.sort(() => Math.random() - 0.5);
 
                 const updatedPlayers = { ...roomData.players };
+                const wolfIds = [];
+
+                // First pass to assign roles and find wolves
                 playerIds.forEach((pid, index) => {
                     updatedPlayers[pid] = { 
                         ...updatedPlayers[pid], 
@@ -897,11 +980,27 @@
                         role: rolesToAssign[index], 
                         votedFor: null, 
                         actionTarget: null, 
-                        hasUsedAbility: false, 
+                        hasUsedAbility: false,
+                        isMayorRevealed: false,
                     };
+                    if (rolesToAssign[index] === 'werewolf') {
+                        wolfIds.push(pid);
+                    }
+                });
+
+                // Second pass for special logic (Alpha Wolf, Traitor)
+                if (settings.includeAlphaWolf && wolfIds.length > 0) {
+                    const alphaIndex = Math.floor(Math.random() * wolfIds.length);
+                    const alphaId = wolfIds[alphaIndex];
+                    updatedPlayers[alphaId].isAlpha = true;
+                }
+                playerIds.forEach(pid => {
+                    if (updatedPlayers[pid].role === 'traitor') {
+                        updatedPlayers[pid].knowsWolves = wolfIds.map(id => getDisplayName(updatedPlayers[id]));
+                    }
                 });
                 
-                const ROLE_REVEAL_DURATION_MS = 5000;
+                const ROLE_REVEAL_DURATION_MS = 8000;
                 transaction.update(roomRef, {
                     state: 'role_reveal', 
                     players: updatedPlayers, 
@@ -930,25 +1029,37 @@
 
         const myPlayerData = roomData.players[currentUser.uid];
         const roleInfo = {
-            werewolf: { emoji: '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
-            seer: { emoji: '👁️', desc: 'Each night, you may check one player to see their role.' },
+            werewolf: { emoji: myPlayerData.isAlpha ? '🐺👑' : '🐺', desc: 'Each night, choose a player to eliminate with your pack.' },
+            seer: { emoji: '👁️', desc: 'Each night, you may check one player to see if they are a werewolf.' },
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
             hunter: { emoji: '👮', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
             villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
+            mayor: { emoji: '🎖️', desc: 'Your vote counts as two. You can reveal your role during the day.' },
+            wildChild: { emoji: 'feral', desc: 'On the first night, choose a role model. If they die, you become a werewolf.' },
+            traitor: { emoji: '🎭', desc: 'You are a villager who wins with the werewolves. Deceive everyone.' },
         };
 
+        let roleName = myPlayerData.role.charAt(0).toUpperCase() + myPlayerData.role.slice(1);
+        if (myPlayerData.isAlpha) roleName = 'Alpha Wolf';
+        if (myPlayerData.role === 'wildChild') roleName = 'Wild Child';
+
         document.getElementById('role-reveal-emoji').textContent = roleInfo[myPlayerData.role].emoji;
-        document.getElementById('role-reveal-name').textContent = `You are a ${myPlayerData.role.charAt(0).toUpperCase() + myPlayerData.role.slice(1)}`;
+        document.getElementById('role-reveal-name').textContent = `You are a ${roleName}`;
         document.getElementById('role-reveal-description').textContent = roleInfo[myPlayerData.role].desc;
         
         const alliesDiv = document.getElementById('role-reveal-allies');
+        alliesDiv.innerHTML = '';
         if (myPlayerData.role === 'werewolf') {
             const allies = Object.values(roomData.players).filter(p => p.role === 'werewolf' && p.nickname !== myPlayerData.nickname);
             if(allies.length > 0) {
                 const allyNames = allies.map(a => getDisplayName(a));
                 alliesDiv.innerHTML = `<p class="muted">Your fellow werewolves are: <strong>${allyNames.join(', ')}</strong></p>`;
             } else { alliesDiv.innerHTML = `<p class="muted">You are the lone wolf...</p>`; }
-        } else { alliesDiv.innerHTML = ''; }
+        } else if (myPlayerData.role === 'traitor') {
+             if(myPlayerData.knowsWolves.length > 0) {
+                alliesDiv.innerHTML = `<p class="muted">The werewolves are: <strong>${myPlayerData.knowsWolves.join(', ')}</strong></p>`;
+            } else { alliesDiv.innerHTML = `<p class="muted">There are no werewolves to help...</p>`; }
+        }
     }
 
     function renderAnnouncement(roomData, oldState) {
@@ -977,6 +1088,7 @@
         showModal('event-modal', false);
         setActiveScreen('game-screen');
         
+        isProcessingPhase = false; // Reset processing flag
         const myData = roomData.players[currentUser.uid];
         const isNight = roomData.state === 'night';
         document.body.classList.toggle('night-phase-bg', isNight);
@@ -991,6 +1103,7 @@
         document.getElementById('game-phase-title').textContent = `${isNight ? 'Night' : 'Day'} ${roomData.turn}`;
         document.getElementById('game-phase-subtitle').textContent = isNight ? "Make your move..." : "Discuss and vote!";
         document.getElementById('skip-vote-btn').classList.toggle('hidden', isNight || !myData.isAlive || myData.votedFor);
+        document.getElementById('reveal-mayor-btn').classList.toggle('hidden', isNight || !myData.isAlive || myData.role !== 'mayor' || myData.isMayorRevealed);
 
         const chatInput = document.getElementById('chat-input');
         const chatSend = document.getElementById('chat-send');
@@ -1036,7 +1149,9 @@
             const devActionsContainer = card.querySelector('.dev-actions-container');
             const playerActionsContainer = card.querySelector('.player-actions-container');
             
-            if (roomData.state === 'night') {
+            if (isProcessingPhase) {
+                // No actions if processing
+            } else if (roomData.state === 'night') {
                 if (currentUser.isDeveloper) {
                     if (p.isAlive && !isMe) {
                         devActionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performDevAction('${pid}', 'kill')">🔪</button>`;
@@ -1048,17 +1163,19 @@
                     }
                 } 
                 
-                const isDevWithKillRole = currentUser.isDeveloper && (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility));
-
                 if (p.isAlive && !isMe && myData.isAlive) {
-                    if ((myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) && !isDevWithKillRole) {
-                        playerActionsContainer.innerHTML += `<button title="Kill/Shoot" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🔪</button>`;
+                    const actionButton = (title, icon, action) => `<button title="${title}" class="p-1 text-2xl" onclick="${action}('${pid}')">${icon}</button>`;
+                    if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) {
+                        playerActionsContainer.innerHTML += actionButton('Kill/Shoot', '🔪', 'performNightAction');
                     }
-                    if (myData.role === 'seer' && !currentUser.isDeveloper) {
-                        playerActionsContainer.innerHTML += `<button title="See Role" class="p-1 text-2xl" onclick="performNightAction('${pid}')">👁️</button>`;
+                    if (myData.role === 'seer') {
+                        playerActionsContainer.innerHTML += actionButton('See Role', '👁️', 'performNightAction');
                     }
-                    if (myData.role === 'doctor' && !currentUser.isDeveloper) {
-                        playerActionsContainer.innerHTML += `<button title="Protect" class="p-1 text-2xl" onclick="performNightAction('${pid}')">🛡️</button>`;
+                    if (myData.role === 'doctor') {
+                        playerActionsContainer.innerHTML += actionButton('Protect', '🛡️', 'performNightAction');
+                    }
+                    if (myData.role === 'wildChild' && roomData.turn === 1 && !myData.roleModel) {
+                        playerActionsContainer.innerHTML += actionButton('Choose Model', '🎯', 'selectRoleModel');
                     }
                 }
             } else if (roomData.state === 'day' && myData.isAlive && p.isAlive) {
@@ -1067,9 +1184,7 @@
             
             if (p.isAlive) {
                 card.classList.add('alive-player-card');
-                if (isMe) {
-                    card.classList.add('my-card-glow');
-                }
+                if (isMe) card.classList.add('my-card-glow');
             } else {
                 card.style.opacity = '0.5';
             }
@@ -1078,9 +1193,10 @@
                 if (devActions.kill && devActions.kill.includes(pid)) card.classList.add('targeted-kill');
                 if (devActions.protect === pid) card.classList.add('targeted-protect');
             }
-            if (myData.actionTarget === pid) {
+            if (myData.actionTarget === pid || myData.roleModel === pid) {
                 if (myData.role === 'werewolf' || myData.role === 'hunter') card.classList.add('targeted-kill');
                 else if (myData.role === 'doctor') card.classList.add('targeted-protect');
+                else if (myData.role === 'wildChild') card.classList.add('targeted-vote');
             }
             if (myData.votedFor === pid) card.classList.add('targeted-vote');
 
@@ -1102,13 +1218,20 @@
             const displayName = getDisplayName(p);
             
             let roleIndicator = '';
-            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
+            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱', mayor: '🎖️', wildChild: 'feral', traitor: '🎭'};
+            if (p.isAlpha) roleEmojis.werewolf = '🐺👑';
+
             if (currentUser.isDeveloper || isMe || (!p.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
             }
+            
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
             if (p.isDeveloper) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
-            el.innerHTML = `<div><span class="mr-2">${p.isAlive ? '👱' : '💀'}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
+            if (p.isMayorRevealed) nickHTML += ' 🎖️';
+            
+            const voteIndicator = (roomData.state === 'day' && p.isAlive && p.votedFor) ? '✅' : '';
+
+            el.innerHTML = `<div><span class="mr-2">${p.isAlive ? '👱' : '💀'}</span><span>${nickHTML} ${roleIndicator}</span></div><div class="text-lg">${voteIndicator}</div>`;
             if (!p.isAlive) el.style.opacity = '0.5';
             if (isMe) el.style.background = 'rgba(125,125,125,0.1)';
             list.appendChild(el);
@@ -1125,18 +1248,18 @@
                 const p = players[pid];
                 if (!p) return '';
                 const displayName = getDisplayName(p);
-                const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
-                return `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
+                let roleName = p.role;
+                if (p.isAlpha) roleName = 'Alpha Wolf';
+                const roleEmoji = {werewolf: p.isAlpha ? '🐺👑' : '🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱', mayor: '🎖️', wildChild: 'feral', traitor: '�'}[p.role] || '❓';
+                return `<p>${roleEmoji} ${displayName} was a ${roleName}</p>`;
             }).join('');
         
         document.getElementById('event-title').textContent = title;
         document.getElementById('event-body').innerHTML = body;
         document.getElementById('btn-close-event').textContent = "Back to Lobby";
-        document.getElementById('btn-close-event').onclick = async () => {
+        document.getElementById('btn-close-event').onclick = () => {
             showModal('event-modal', false);
-            if (localGameState.hostId === currentUser.uid) {
-                await deleteDoc(doc(db, 'rooms', currentRoomId));
-            }
+            handleRoomClose(); // All clients can just leave
         };
         showModal('event-modal', true);
     }
@@ -1152,7 +1275,8 @@
 
         if (myData.role === 'seer') {
             const targetPlayer = localGameState.players[targetId];
-            document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)}'s role is ${targetPlayer.role === 'werewolf' ? 'Werewolf' : 'Not a Werewolf'}.`;
+            const isWolf = targetPlayer.role === 'werewolf' && !targetPlayer.isAlpha;
+            document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)}'s role is ${isWolf ? 'Werewolf' : 'Not a Werewolf'}.`;
             showModal('seer-result-modal', true);
             showToast('Vision received.');
         } else {
@@ -1161,11 +1285,18 @@
         await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: targetId });
     }
 
+    async function selectRoleModel(targetId) {
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        showToast(`You have chosen ${getDisplayName(localGameState.players[targetId])} as your role model.`);
+        await updateDoc(roomRef, { [`players.${currentUser.uid}.roleModel`]: targetId });
+    }
+
     async function performDevAction(targetId, actionType) {
         const roomRef = doc(db, 'rooms', currentRoomId);
         showToast(`Dev Action: ${actionType} on ${getDisplayName(localGameState.players[targetId])}`);
         
         if (actionType === 'kill' || actionType === 'protect') {
+            // This is a client-side prediction for UI responsiveness
             if (!localGameState.devActions) localGameState.devActions = {};
             if (actionType === 'kill') {
                 let killList = localGameState.devActions.kill || [];
@@ -1244,10 +1375,7 @@
         const timerSubtitleEl = document.getElementById('timer-subtitle');
         if (!endTime || !endTime.seconds) { timerEl.textContent = '--:--'; return; }
         
-        timerSubtitleEl.textContent = 'TIME REMAINING';
-        document.body.classList.remove('timer-low-tension');
-
-        gameTimerInterval = setInterval(() => {
+        const update = () => {
             const remaining = Math.max(0, Math.round((endTime.seconds * 1000 - Date.now()) / 1000));
             timerEl.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
             
@@ -1263,8 +1391,13 @@
                 clearInterval(gameTimerInterval);
                 timerEl.textContent = '00:00';
                 timerSubtitleEl.textContent = 'PROCESSING...';
+                isProcessingPhase = true;
+                renderPlayerCards(localGameState); // Re-render to disable actions
             }
-        }, 1000);
+        };
+
+        update();
+        gameTimerInterval = setInterval(update, 1000);
     }
 
     function playPhaseTransition(phase, turn) {
@@ -1296,6 +1429,7 @@
     window.performNightAction = performNightAction;
     window.performDevAction = performDevAction;
     window.voteForPlayer = voteForPlayer;
+    window.selectRoleModel = selectRoleModel;
 
     document.getElementById('btn-create-room').addEventListener('click', createRoom);
     document.getElementById('btn-join').addEventListener('click', ()=>{
@@ -1308,6 +1442,11 @@
     document.getElementById('chat-send').addEventListener('click', sendMessage);
     document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     document.getElementById('skip-vote-btn').addEventListener('click', () => voteForPlayer('__SKIP__'));
+    document.getElementById('reveal-mayor-btn').addEventListener('click', async () => {
+        const roomRef = doc(db, 'rooms', currentRoomId);
+        await updateDoc(roomRef, { [`players.${currentUser.uid}.isMayorRevealed`]: true });
+        showToast('You have revealed yourself as the Mayor!');
+    });
     document.getElementById('dev-end-game').addEventListener('click', async () => {
         if (confirm("End game? This will reveal all roles.")) {
             const roomRef = doc(db, 'rooms', currentRoomId);
