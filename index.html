@@ -42,7 +42,7 @@
     .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:1rem; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
 
-    .card{background:linear-gradient(180deg, var(--card-gradient-start), var(--card-gradient-end));border-radius:14px;padding:24px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(2,6,23,0.1); transition: background-color 0.3s, border-color 0.3s;}
+    .card{background:linear-gradient(180deg, var(--card-gradient-start), var(--card-gradient-end));border-radius:14px;padding:24px;border:1px solid var(--border);box-shadow:0 8px 24px rgba(2,6,23,0.1); transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;}
     .muted{color:var(--muted)}
     .input-wrapper{position:relative;width:100%;}
     .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
@@ -95,7 +95,11 @@
     .lag-indicator { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 5px; color: white; background: #f97316; margin-left: 8px; }
 
     .reveal-animation { animation: reveal 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
-    @keyframes reveal { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes reveal { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.1); } 80% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
+
+    .alive-player-card { animation: breathe 4s ease-in-out infinite; }
+    @keyframes breathe { 0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(2,6,23,0.1); } 50% { transform: scale(1.02); box-shadow: 0 10px 28px rgba(2,6,23,0.15); } }
+    .my-card-glow { box-shadow: 0 0 15px rgba(79, 70, 229, 0.6) !important; border-color: rgba(124, 58, 237, 0.8) !important; }
   </style>
 </head>
 <body>
@@ -954,7 +958,6 @@
             document.getElementById('event-title').textContent = title;
             document.getElementById('event-body').innerHTML = events.map(e => `<p>${e.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('');
             
-            // Set button text correctly
             document.getElementById('btn-close-event').textContent = "Continue";
             showModal('event-modal', true);
             
@@ -974,6 +977,7 @@
         showModal('event-modal', false);
         setActiveScreen('game-screen');
         
+        const myData = roomData.players[currentUser.uid];
         const isNight = roomData.state === 'night';
         document.body.classList.toggle('night-phase-bg', isNight);
 
@@ -984,8 +988,6 @@
         renderPlayerCards(roomData);
         updateTimer(roomData.phaseEndTime);
         
-        const myData = roomData.players[currentUser.uid];
-        
         document.getElementById('game-phase-title').textContent = `${isNight ? 'Night' : 'Day'} ${roomData.turn}`;
         document.getElementById('game-phase-subtitle').textContent = isNight ? "Make your move..." : "Discuss and vote!";
         document.getElementById('skip-vote-btn').classList.toggle('hidden', isNight || !myData.isAlive || myData.votedFor);
@@ -995,7 +997,14 @@
         const canChat = !isNight && (myData.isAlive || currentUser.isDeveloper);
         chatInput.disabled = !canChat;
         chatSend.disabled = !canChat;
-        chatInput.placeholder = canChat ? 'Type a message...' : 'Chat is disabled at night.';
+
+        let placeholderText = 'Type a message...';
+        if (isNight) {
+            placeholderText = 'Chat is disabled at night.';
+        } else if (!myData.isAlive && !currentUser.isDeveloper) {
+            placeholderText = 'You cannot chat, you are dead.';
+        }
+        chatInput.placeholder = placeholderText;
     }
     
     function renderPlayerCards(roomData) {
@@ -1008,17 +1017,16 @@
             const p = roomData.players[pid];
             if (!p) return;
             const card = document.createElement('div');
-            card.className = 'p-2 rounded-lg flex flex-col items-center justify-between text-center transition-transform hover:scale-105 hover:-translate-y-1';
-            card.style.background = 'var(--card)';
+            card.className = 'p-2 rounded-lg flex flex-col items-center justify-between text-center transition-transform hover:scale-105 hover:-translate-y-1 card';
             card.style.border = '2px solid transparent';
-            card.style.aspectRatio = '1 / 1'; // Corrected aspect ratio
+            card.style.aspectRatio = '1 / 1';
 
             const isMe = pid === currentUser.uid;
             const displayName = getDisplayName(p);
 
             card.innerHTML = `
                 <div>
-                    <div class="text-4xl">${p.isAlive ? '🙂' : '�'}</div>
+                    <div class="text-4xl">${p.isAlive ? '👱' : '💀'}</div>
                     <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
@@ -1057,7 +1065,14 @@
                  if (!isMe) playerActionsContainer.innerHTML += `<button class="btn btn-primary px-3 py-1 text-xs" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
             }
             
-            if (!p.isAlive) card.style.opacity = '0.5';
+            if (p.isAlive) {
+                card.classList.add('alive-player-card');
+                if (isMe) {
+                    card.classList.add('my-card-glow');
+                }
+            } else {
+                card.style.opacity = '0.5';
+            }
 
             if (currentUser.isDeveloper) {
                 if (devActions.kill && devActions.kill.includes(pid)) card.classList.add('targeted-kill');
@@ -1093,7 +1108,7 @@
             }
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
             if (p.isDeveloper) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
-            el.innerHTML = `<div><span class="mr-2">${p.isAlive ? '🙂' : '👻'}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
+            el.innerHTML = `<div><span class="mr-2">${p.isAlive ? '👱' : '💀'}</span><span>${nickHTML} ${roleIndicator}</span></div>`;
             if (!p.isAlive) el.style.opacity = '0.5';
             if (isMe) el.style.background = 'rgba(125,125,125,0.1)';
             list.appendChild(el);
@@ -1105,11 +1120,10 @@
         const { winningTeam, reason, players } = roomData.gameOver;
         const title = `${winningTeam} Win!`;
         
-        // Use the sorted playerOrder array for consistent display
         const body = `<p>${reason}</p><h4 class='mt-4'>Final Roles:</h4>` + 
             playerOrder.map(pid => {
                 const p = players[pid];
-                if (!p) return ''; // Safety check
+                if (!p) return '';
                 const displayName = getDisplayName(p);
                 const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
                 return `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
@@ -1121,10 +1135,8 @@
         document.getElementById('btn-close-event').onclick = async () => {
             showModal('event-modal', false);
             if (localGameState.hostId === currentUser.uid) {
-                // Let host clean up the room
                 await deleteDoc(doc(db, 'rooms', currentRoomId));
             }
-            // All clients will be kicked by the onSnapshot listener detecting the deleted doc
         };
         showModal('event-modal', true);
     }
@@ -1170,7 +1182,11 @@
         }
 
         if (actionType === 'revive') {
-            return await updateDoc(roomRef, { [`players.${targetId}.isAlive`]: true });
+            return await updateDoc(roomRef, { 
+                [`players.${targetId}.isAlive`]: true,
+                [`players.${targetId}.actionTarget`]: deleteField(),
+                [`players.${targetId}.votedFor`]: deleteField()
+            });
         }
         if (actionType === 'seer') {
             const targetPlayer = localGameState.players[targetId];
