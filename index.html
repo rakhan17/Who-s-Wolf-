@@ -528,6 +528,13 @@
         }
         const roomData = snap.data();
         const oldState = localGameState.state;
+
+        // ** KICK DETECTION LOGIC - V3 (Robust) **
+        if (oldState !== undefined && (!roomData.players || !roomData.players[currentUser.uid])) {
+            showToast("You were kicked or the room was closed.", true);
+            handleRoomClose();
+            return; // Stop processing this snapshot
+        }
         
         if (roomData.players) {
             playerOrder = Object.keys(roomData.players).sort((a,b) => getDisplayName(roomData.players[a]).localeCompare(getDisplayName(roomData.players[b])));
@@ -542,12 +549,6 @@
         if (roomData.state === 'lobby' && oldState !== 'lobby' && oldState !== undefined) {
             setActiveScreen('lobby-screen');
             renderLobbyView(roomData);
-            return;
-        }
-        
-        if (roomData.state !== 'lobby' && (!roomData.players || !roomData.players[currentUser.uid])) {
-            showToast("You were kicked or the game ended.", true);
-            handleRoomClose();
             return;
         }
 
