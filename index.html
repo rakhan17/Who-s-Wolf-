@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Who's Wolf — Enhanced</title>
+  <title>Who's Wolf</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐺</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -35,6 +35,9 @@
     @keyframes pulse-bg { 0% { background-color: var(--bg); } 50% { background-color: #111827; } 100% { background-color: var(--bg); } }
     .light-theme.night-phase-bg { animation: pulse-bg-light 10s ease-in-out infinite; }
     @keyframes pulse-bg-light { 0% { background-color: var(--bg); } 50% { background-color: #e2e8f0; } 100% { background-color: var(--bg); } }
+
+    body.timer-low-tension::before { content: ''; position: fixed; inset: 0; box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.5); pointer-events: none; animation: pulse-red-glow 1.5s infinite; z-index: 1000; }
+    @keyframes pulse-red-glow { 0% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.3); } 70% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.6); } 100% { box-shadow: inset 0 0 20px 10px rgba(239, 68, 68, 0.3); } }
 
     .screen{display:flex; align-items:center; justify-content:center; position:absolute; inset:0; padding:1rem; box-sizing:border-box; opacity:0; transition:opacity 0.4s ease-in-out; pointer-events:none;}
     .screen.active{ opacity:1; pointer-events:auto; }
@@ -183,6 +186,7 @@
                   <label class="toggle-label muted text-sm">Seer <input id="setting-seer" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
                   <label class="toggle-label muted text-sm">Doctor <input id="setting-doctor" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
                   <label class="toggle-label muted text-sm">Hunter <input id="setting-hunter" type="checkbox" class="setting-input"><span class="toggle-switch"></span></label>
+                  <label class="toggle-label muted text-sm">Reveal Role <input id="setting-reveal-role" type="checkbox" checked class="setting-input"><span class="toggle-switch"></span></label>
                 </div>
                 <div class="grid grid-cols-2 gap-4 pt-2">
                   <div>
@@ -213,7 +217,7 @@
         <button id="skip-vote-btn" class="btn btn-secondary hidden">Skip Vote</button>
         <div class="text-center">
           <div id="game-timer" class="text-3xl font-bold transition-colors duration-300">00:45</div>
-          <div class="muted text-xs">TIME REMAINING</div>
+          <div id="timer-subtitle" class="muted text-xs">TIME REMAINING</div>
         </div>
       </div>
     </div>
@@ -319,6 +323,7 @@
     }
 
     let auth, db;
+    // NOTE: This is a public Firebase config. No sensitive data is stored here.
     const firebaseConfig = {
       apiKey: "AIzaSyCsPjYivo2bQp-fsr5wcdBfTRIiAcSbJNo",
       authDomain: "who-s-wolf.firebaseapp.com",
@@ -654,6 +659,7 @@
             includeSeer: document.getElementById('setting-seer').checked,
             includeDoctor: document.getElementById('setting-doctor').checked,
             includeHunter: document.getElementById('setting-hunter').checked,
+            revealRoleOnDeath: document.getElementById('setting-reveal-role').checked,
             dayDuration: parseInt(document.getElementById('setting-day').value || 60),
             nightDuration: parseInt(document.getElementById('setting-night').value || 45)
         };
@@ -664,6 +670,7 @@
         document.getElementById('setting-seer').checked = settings.includeSeer;
         document.getElementById('setting-doctor').checked = settings.includeDoctor;
         document.getElementById('setting-hunter').checked = settings.includeHunter;
+        document.getElementById('setting-reveal-role').checked = settings.revealRoleOnDeath ?? true; // Default to true if not set
         document.getElementById('setting-day').value = settings.dayDuration;
         document.getElementById('setting-night').value = settings.nightDuration;
         document.querySelectorAll('.setting-input').forEach(input => input.disabled = disableInputs);
@@ -727,12 +734,13 @@
     }
     
     function processNightActions(roomData) {
-        let { players, turn, devActions = {} } = roomData;
+        let { players, turn, devActions = {}, settings } = roomData;
         let events = [];
         const wolfVotes = {};
         let doctorSaveTarget = null;
         let hunterShotTarget = null;
         let updatedPlayers = JSON.parse(JSON.stringify(players));
+        const revealRole = settings.revealRoleOnDeath ?? true;
 
         Object.entries(updatedPlayers).forEach(([pid, p]) => {
             if (p.isAlive && p.actionTarget) {
@@ -760,7 +768,11 @@
             } else {
                 if (updatedPlayers[pid] && updatedPlayers[pid].isAlive) {
                     updatedPlayers[pid].isAlive = false;
-                    events.push(`**${getDisplayName(updatedPlayers[pid])}** was found dead.`);
+                    let deathMessage = `**${getDisplayName(updatedPlayers[pid])}** was found dead.`;
+                    if (revealRole) {
+                        deathMessage += ` Their role was **${updatedPlayers[pid].role}**.`;
+                    }
+                    events.push(deathMessage);
                 }
             }
         });
@@ -779,12 +791,13 @@
     }
 
     function processDayVotes(roomData) {
-        let { players, turn } = roomData;
+        let { players, turn, settings } = roomData;
         let updatedPlayers = JSON.parse(JSON.stringify(players));
         let events = [];
         const votes = {};
         const voteDetails = {};
         let skipVotes = 0;
+        const revealRole = settings.revealRoleOnDeath ?? true;
 
         Object.entries(updatedPlayers).forEach(([voterId, p]) => {
             if (p.isAlive && p.votedFor) {
@@ -820,7 +833,11 @@
 
         if (eliminatedPlayerId) {
             updatedPlayers[eliminatedPlayerId].isAlive = false;
-            events.push(`**${getDisplayName(updatedPlayers[eliminatedPlayerId])}** was eliminated. Their role was **${updatedPlayers[eliminatedPlayerId].role}**.`);
+            let eliminationMessage = `**${getDisplayName(updatedPlayers[eliminatedPlayerId])}** was eliminated.`;
+            if (revealRole) {
+                eliminationMessage += ` Their role was **${updatedPlayers[eliminatedPlayerId].role}**.`;
+            }
+            events.push(eliminationMessage);
         } else {
             events.push("The vote was tied or skipped. No one was eliminated.");
         }
@@ -936,7 +953,11 @@
             const { title, events, deaths } = roomData.announcement;
             document.getElementById('event-title').textContent = title;
             document.getElementById('event-body').innerHTML = events.map(e => `<p>${e.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`).join('');
+            
+            // Set button text correctly
+            document.getElementById('btn-close-event').textContent = "Continue";
             showModal('event-modal', true);
+            
             if (deaths) {
                 document.body.classList.add('shake');
                 setTimeout(() => document.body.classList.remove('shake'), 500);
@@ -990,21 +1011,21 @@
             card.className = 'p-2 rounded-lg flex flex-col items-center justify-between text-center transition-transform hover:scale-105 hover:-translate-y-1';
             card.style.background = 'var(--card)';
             card.style.border = '2px solid transparent';
-            card.style.aspectRatio = '1 / 1.2';
+            card.style.aspectRatio = '1 / 1'; // Corrected aspect ratio
 
             const isMe = pid === currentUser.uid;
             const displayName = getDisplayName(p);
 
             card.innerHTML = `
                 <div>
-                    <div class="text-4xl">${p.isAlive ? '🙂' : '👻'}</div>
+                    <div class="text-4xl">${p.isAlive ? '🙂' : '�'}</div>
                     <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
                 </div>
-                <div class="dev-actions-grid grid grid-cols-2 gap-1 mt-2 text-xl"></div>
+                <div class="dev-actions-container flex justify-center gap-2 mt-2 text-xl"></div>
                 <div class="player-actions-container flex flex-wrap justify-center gap-2 mt-2"></div>`;
             
-            const devActionsContainer = card.querySelector('.dev-actions-grid');
+            const devActionsContainer = card.querySelector('.dev-actions-container');
             const playerActionsContainer = card.querySelector('.player-actions-container');
             
             if (roomData.state === 'night') {
@@ -1019,7 +1040,6 @@
                     }
                 } 
                 
-                // **FIX**: Prevent duplicate action buttons for developers
                 const isDevWithKillRole = currentUser.isDeveloper && (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility));
 
                 if (p.isAlive && !isMe && myData.isAlive) {
@@ -1068,7 +1088,7 @@
             
             let roleIndicator = '';
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱'};
-            if (currentUser.isDeveloper || isMe || (!myData.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
+            if (currentUser.isDeveloper || isMe || (!p.isAlive && myData.role === 'werewolf' && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
             }
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
@@ -1084,8 +1104,12 @@
     function renderGameOver(roomData) {
         const { winningTeam, reason, players } = roomData.gameOver;
         const title = `${winningTeam} Win!`;
+        
+        // Use the sorted playerOrder array for consistent display
         const body = `<p>${reason}</p><h4 class='mt-4'>Final Roles:</h4>` + 
-            Object.values(players).map(p => {
+            playerOrder.map(pid => {
+                const p = players[pid];
+                if (!p) return ''; // Safety check
                 const displayName = getDisplayName(p);
                 const roleEmoji = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱'}[p.role] || '❓';
                 return `<p>${roleEmoji} ${displayName} was a ${p.role}</p>`;
@@ -1097,9 +1121,10 @@
         document.getElementById('btn-close-event').onclick = async () => {
             showModal('event-modal', false);
             if (localGameState.hostId === currentUser.uid) {
+                // Let host clean up the room
                 await deleteDoc(doc(db, 'rooms', currentRoomId));
             }
-            handleRoomClose();
+            // All clients will be kicked by the onSnapshot listener detecting the deleted doc
         };
         showModal('event-modal', true);
     }
@@ -1115,7 +1140,7 @@
 
         if (myData.role === 'seer') {
             const targetPlayer = localGameState.players[targetId];
-            document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)} is a ${targetPlayer.role}.`;
+            document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)}'s role is ${targetPlayer.role === 'werewolf' ? 'Werewolf' : 'Not a Werewolf'}.`;
             showModal('seer-result-modal', true);
             showToast('Vision received.');
         } else {
@@ -1200,16 +1225,29 @@
     function updateTimer(endTime) {
         if (gameTimerInterval) clearInterval(gameTimerInterval);
         const timerEl = document.getElementById('game-timer');
+        const timerSubtitleEl = document.getElementById('timer-subtitle');
         if (!endTime || !endTime.seconds) { timerEl.textContent = '--:--'; return; }
+        
+        timerSubtitleEl.textContent = 'TIME REMAINING';
+        document.body.classList.remove('timer-low-tension');
+
         gameTimerInterval = setInterval(() => {
             const remaining = Math.max(0, Math.round((endTime.seconds * 1000 - Date.now()) / 1000));
             timerEl.textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+            
             if (remaining <= 10 && remaining > 0) {
                 timerEl.classList.add('text-red-500', 'animate-pulse');
+                document.body.classList.add('timer-low-tension');
             } else {
                 timerEl.classList.remove('text-red-500', 'animate-pulse');
+                document.body.classList.remove('timer-low-tension');
             }
-            if (remaining <= 0) clearInterval(gameTimerInterval);
+            
+            if (remaining <= 0) {
+                clearInterval(gameTimerInterval);
+                timerEl.textContent = '00:00';
+                timerSubtitleEl.textContent = 'PROCESSING...';
+            }
         }, 1000);
     }
 
@@ -1255,7 +1293,7 @@
     document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
     document.getElementById('skip-vote-btn').addEventListener('click', () => voteForPlayer('__SKIP__'));
     document.getElementById('dev-end-game').addEventListener('click', async () => {
-        if (confirm("End game?")) {
+        if (confirm("End game? This will reveal all roles.")) {
             const roomRef = doc(db, 'rooms', currentRoomId);
             const roomData = (await getDoc(roomRef)).data();
             await updateDoc(roomRef, { 
