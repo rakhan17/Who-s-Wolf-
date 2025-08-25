@@ -1083,31 +1083,51 @@
                 const playerIds = Object.keys(roomData.players);
                 const settings = roomData.settings;
                 
-                let rolesToAssign = [];
-                if (settings.includeSeer) rolesToAssign.push('seer');
-                if (settings.includeDoctor) rolesToAssign.push('doctor');
-                if (settings.includeHunter) rolesToAssign.push('hunter');
-                if (settings.includeMayor) rolesToAssign.push('mayor');
-                if (settings.includeJailer) rolesToAssign.push('jailer');
-                if (settings.includeWildChild) rolesToAssign.push('wildChild');
-                if (settings.includeTraitor) rolesToAssign.push('traitor');
-                if (settings.includeMimic) rolesToAssign.push('mimic');
-                if (settings.includeJester) rolesToAssign.push('jester');
-                if (settings.includeArsonist) rolesToAssign.push('arsonist');
-                if (settings.includeExecutioner) rolesToAssign.push('executioner');
+                const wolfTeamRoles = ['werewolf', 'traitor', 'mimic'];
+                const villagerTeamRoles = ['villager', 'seer', 'doctor', 'hunter', 'mayor', 'jailer', 'wildChild'];
                 
-                for (let i = 0; i < settings.numWerewolves; i++) {
-                    rolesToAssign.push('werewolf');
-                }
+                let rolesToAssign = [];
+                let isBalanced = false;
+                let attempts = 0;
 
-                while (rolesToAssign.length < playerIds.length) {
-                    rolesToAssign.push('villager');
+                do {
+                    rolesToAssign = [];
+                    if (settings.includeSeer) rolesToAssign.push('seer');
+                    if (settings.includeDoctor) rolesToAssign.push('doctor');
+                    if (settings.includeHunter) rolesToAssign.push('hunter');
+                    if (settings.includeMayor) rolesToAssign.push('mayor');
+                    if (settings.includeJailer) rolesToAssign.push('jailer');
+                    if (settings.includeWildChild) rolesToAssign.push('wildChild');
+                    if (settings.includeTraitor) rolesToAssign.push('traitor');
+                    if (settings.includeMimic) rolesToAssign.push('mimic');
+                    if (settings.includeJester) rolesToAssign.push('jester');
+                    if (settings.includeArsonist) rolesToAssign.push('arsonist');
+                    if (settings.includeExecutioner) rolesToAssign.push('executioner');
+                    
+                    for (let i = 0; i < settings.numWerewolves; i++) {
+                        rolesToAssign.push('werewolf');
+                    }
+
+                    while (rolesToAssign.length < playerIds.length) {
+                        rolesToAssign.push('villager');
+                    }
+                    rolesToAssign.sort(() => Math.random() - 0.5);
+
+                    const wolfCount = rolesToAssign.filter(r => wolfTeamRoles.includes(r)).length;
+                    const nonWolfCount = rolesToAssign.length - wolfCount;
+                    
+                    isBalanced = wolfCount < nonWolfCount;
+                    attempts++;
+
+                } while (!isBalanced && attempts < 20);
+
+                if (!isBalanced) {
+                    throw new Error("Could not create a balanced game. Please adjust role settings.");
                 }
-                rolesToAssign.sort(() => Math.random() - 0.5);
 
                 const updatedPlayers = { ...roomData.players };
                 const wolfIds = [];
-                const villagerTeamIds = [];
+                const villagerTeamIdsForTarget = [];
 
                 playerIds.forEach((pid, index) => {
                     const role = rolesToAssign[index];
@@ -1128,14 +1148,14 @@
                     if (role === 'werewolf') {
                         wolfIds.push(pid);
                     }
-                    if (['villager', 'seer', 'doctor', 'hunter', 'mayor', 'wildChild', 'jailer'].includes(role)) {
-                        villagerTeamIds.push(pid);
+                    if (villagerTeamRoles.includes(role)) {
+                        villagerTeamIdsForTarget.push(pid);
                     }
                 });
 
                 const executionerId = playerIds.find(pid => updatedPlayers[pid].role === 'executioner');
-                if (executionerId && villagerTeamIds.length > 0) {
-                    const targetId = villagerTeamIds[Math.floor(Math.random() * villagerTeamIds.length)];
+                if (executionerId && villagerTeamIdsForTarget.length > 0) {
+                    const targetId = villagerTeamIdsForTarget[Math.floor(Math.random() * villagerTeamIdsForTarget.length)];
                     updatedPlayers[executionerId].targetId = targetId;
                 }
 
@@ -1162,7 +1182,7 @@
             });
         } catch (e) {
             console.error("Start Game Error:", e);
-            showToast("Failed to start game.", true);
+            showToast(e.message || "Failed to start game.", true);
         } finally { setLoading(false); }
     }
     
@@ -1310,7 +1330,7 @@
                 <div>
                     <div class="text-4xl relative">
                         <span>${p.isAlive ? (roomData.jailedPlayerId === pid ? '⛓️' : '👱') : '💀'}</span>
-                        ${p.isDoused ? '<span class="absolute text-2xl -top-1 -right-1" title="Doused">⛽</span>' : ''}
+                        ${(myData.role === 'arsonist' && p.isDoused) ? '<span class="absolute text-2xl -top-1 -right-1" title="Doused">⛽</span>' : ''}
                     </div>
                     <strong class="mt-2 block text-sm">${displayName}</strong>
                     ${p.isDeveloper ? '<span class="shimmer-tag mt-1">Developer</span>' : ''}
@@ -1335,7 +1355,7 @@
                     }
                 } 
                 
-                if (p.isAlive && myData.isAlive && !currentUser.isDeveloper) {
+                if (p.isAlive && myData.isAlive && !currentUser.isDeveloper && !myData.actionTarget) {
                     const actionButton = (title, icon, action, targetId) => `<button title="${title}" class="p-1 text-2xl" onclick="${action}('${targetId}')">${icon}</button>`;
                     if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) {
                         if (!isMe) playerActionsContainer.innerHTML += actionButton('Kill/Shoot', '🔪', 'performNightAction', pid);
@@ -1403,7 +1423,7 @@
             const displayName = getDisplayName(p);
             
             let roleIndicator = '';
-            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱', mayor: '🎖️', jailer: '🗝️', wildChild: '🧒', traitor: '🎭', mimic: '🦜', jester: '🤡', arsonist: '🔥', executioner: '🪓'};
+            const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'�‍⚕️', hunter: '👮', villager:'👱', mayor: '🎖️', jailer: '🗝️', wildChild: '🧒', traitor: '🎭', mimic: '🦜', jester: '🤡', arsonist: '🔥', executioner: '🪓'};
             if (p.isAlpha) roleEmojis.werewolf = '🐺👑';
 
             if (currentUser.isDeveloper || isMe || (!p.isAlive && (myData.role === 'werewolf' || myData.role === 'mimic') && p.role === 'werewolf')) {
@@ -1452,7 +1472,7 @@
                 if (wolfTeamRoles.includes(p.role)) nameColorClass = 'team-wolf';
                 if (neutralRoles.includes(p.role)) nameColorClass = 'team-neutral';
 
-                const roleEmoji = {werewolf: p.isAlpha ? '🐺👑' : '🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'�', mayor: '🎖️', jailer: '🗝️', wildChild: '🧒', traitor: '🎭', mimic: '🦜', jester: '🤡', arsonist: '🔥', executioner: '🪓'}[p.role] || '❓';
+                const roleEmoji = {werewolf: p.isAlpha ? '🐺👑' : '🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter:'👮', villager:'👱', mayor: '🎖️', jailer: '🗝️', wildChild: '🧒', traitor: '🎭', mimic: '🦜', jester: '🤡', arsonist: '🔥', executioner: '🪓'}[p.role] || '❓';
                 return `<p>${roleEmoji} <span class="${nameColorClass}">${displayName}</span> was a ${roleName}</p>`;
             }).join('');
         
@@ -1474,13 +1494,21 @@
             showToast('Action cancelled.');
             return await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: deleteField() });
         }
-
-        const updates = { [`players.${currentUser.uid}.actionTarget`]: targetId };
         
         if (myData.role === 'arsonist') {
-            showToast(`Doused ${getDisplayName(localGameState.players[targetId])}.`);
-            return await updateDoc(roomRef, { [`players.${targetId}.isDoused`]: true });
+            if (targetId === '__IGNITE__') {
+                showToast('Ignition scheduled!');
+                return await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: '__IGNITE__' });
+            } else {
+                showToast(`Doused ${getDisplayName(localGameState.players[targetId])}.`);
+                return await updateDoc(roomRef, { 
+                    [`players.${targetId}.isDoused`]: true,
+                    [`players.${currentUser.uid}.actionTarget`]: targetId 
+                });
+            }
         }
+
+        const updates = { [`players.${currentUser.uid}.actionTarget`]: targetId };
         
         if (myData.role === 'jailer') {
             const isExecuting = targetId.startsWith('execute_');
