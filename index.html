@@ -18,7 +18,7 @@
       --card-gradient-end: rgba(255, 255, 255, 0.01);
       --team-wolf: #ef4444;
       --team-villager: #3b82f6;
-      --team-neutral: #a855f7;
+      --team-neutral: #a855f7; /* New Neutral Color */
     }
     .light-theme {
       --bg: #f1f5f9;
@@ -62,14 +62,14 @@
     .spinner{width:20px;height:20px;border-radius:50%;border:2px solid rgba(125,125,125,0.2);border-top-color:var(--text);animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:900; opacity: 0; transition: opacity 0.3s ease; pointer-events:none;}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:50; opacity: 0; transition: opacity 0.3s ease; pointer-events:none;}
     .modal{min-width:280px;max-width:420px; opacity: 0; transform: scale(0.95); transition: all 0.3s ease;}
     .modal-backdrop.active { opacity: 1; pointer-events:auto; }
     .modal-backdrop.active .modal { opacity: 1; transform: scale(1); }
     #event-modal .modal { max-width: 520px; }
     #rules-modal-backdrop .modal { max-width: 640px; }
 
-    #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
+    #notification-toast {position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 100; opacity: 0; transition: opacity 0.3s, top 0.3s; pointer-events: none;}
     #notification-toast.show { opacity: 1; top: 30px; }
     
     .hidden { display: none !important; }
@@ -86,7 +86,7 @@
 
     .team-wolf { color: var(--team-wolf); }
     .team-villager { color: var(--team-villager); }
-    .team-neutral { color: var(--team-neutral); }
+    .team-neutral { color: var(--team-neutral); } /* New Neutral Color Style */
 
     .targeted-vote { border: 2px solid #7c3aed !important; animation: pulse-vote 1.5s infinite; }
     @keyframes pulse-vote { 0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(124, 58, 237, 0); } 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); } }
@@ -118,7 +118,7 @@
 
   <div id="notification-toast"></div>
 
-  <div id="loading-overlay" class="screen active" data-screen-type="overlay" style="z-index:1001; background: rgba(11, 18, 32, 0.8);">
+  <div id="loading-overlay" class="screen active" data-screen-type="overlay" style="z-index:40; background: rgba(11, 18, 32, 0.8);">
     <div class="text-center">
       <div class="text-6xl">🐺</div>
       <h1 class="text-3xl my-2">Who's Wolf?</h1>
@@ -274,13 +274,12 @@
     </div>
   </div>
 
-  <div id="role-reveal-overlay" class="screen" data-screen-type="overlay" style="z-index: 950; background: rgba(11, 18, 32, 0.9); text-align: center; color: white;">
+  <div id="role-reveal-overlay" class="screen" data-screen-type="overlay" style="z-index: 25; background: rgba(11, 18, 32, 0.9); text-align: center; color: white;">
       <div class="card">
         <div id="role-reveal-emoji" class="text-8xl mb-3"></div>
         <h1 id="role-reveal-name" class="text-3xl m-0"></h1>
         <p id="role-reveal-description" class="muted mt-2"></p>
         <div id="role-reveal-allies" class="mt-4"></div>
-        <p id="role-reveal-timer" class="muted mt-4"></p>
       </div>
   </div>
   
@@ -294,15 +293,8 @@
 
   <div id="jail-chat-modal" class="modal-backdrop">
     <div class="modal card flex flex-col h-[80vh] max-h-[500px]">
-        <div class="flex justify-between items-center mb-3">
-            <h1 id="jail-chat-title" class="text-2xl m-0">Interrogation</h1>
-            <button id="jail-close-btn" class="btn btn-secondary text-xs">End Interrogation</button>
-        </div>
+        <h1 id="jail-chat-title" class="text-2xl m-0 mb-3">Interrogation</h1>
         <div id="jail-chat-messages" class="flex-1 overflow-y-auto mb-2 text-sm bg-black bg-opacity-10 rounded-lg p-2"></div>
-        <div id="jailer-actions" class="flex gap-2 mb-2 hidden">
-             <button id="jailer-execute-btn" class="btn btn-danger flex-1">⚖️ Execute</button>
-             <button id="jailer-release-btn" class="btn btn-primary flex-1">🕊️ Release</button>
-        </div>
         <div class="flex gap-2">
             <input id="jail-chat-input" class="input-field flex-1" placeholder="Type a private message..."/>
             <button id="jail-chat-send" class="btn btn-primary">Send</button>
@@ -329,14 +321,14 @@
             <div><strong>👁️ <span class="team-villager">Seer</span></strong><p class="muted text-sm">During the night, you can choose one player to learn their true identity (Werewolf or not).</p></div>
             <div><strong>🧑‍⚕️ <span class="team-villager">Doctor</span></strong><p class="muted text-sm">During the night, you can choose one player to protect from a werewolf attack for that night.</p></div>
             <div><strong>👮 <span class="team-villager">Hunter</span></strong><p class="muted text-sm">You have one bullet. At night, you can choose to shoot a player you think is a werewolf.</p></div>
-            <div><strong>🎖️ <span class="team-villager">Mayor</span></strong><p class="muted text-sm">Your vote is absolute. You can reveal your role during the day to single-handedly decide the vote.</p></div>
-            <div><strong>🗝️ <span class="team-villager">Jailer</span></strong><p class="muted text-sm">At night, if your jail is empty, you can imprison a player. You can privately chat and execute them once per game.</p></div>
+            <div><strong>🎖️ <span class="team-villager">Mayor</span></strong><p class="muted text-sm">Your vote counts as two. You can choose to reveal your role during the day to make your influence known.</p></div>
+            <div><strong>🗝️ <span class="team-villager">Jailer</span></strong><p class="muted text-sm">Each night, you can imprison a player. They are protected but cannot act. You can privately chat and execute them once per game.</p></div>
             <div><strong>🧒 <span class="team-villager">Wild Child</span></strong><p class="muted text-sm">On night 1, choose a role model. If they die, you become a Werewolf.</p></div>
-            <div><strong>🐺👑 <span class="team-wolf">Alpha Wolf</span></strong><p class="muted text-sm">You are a Werewolf, but the Seer sees you as a Villager.</p></div>
+            <div><strong>�👑 <span class="team-wolf">Alpha Wolf</span></strong><p class="muted text-sm">You are a Werewolf, but the Seer sees you as a Villager.</p></div>
             <div><strong>🎭 <span class="team-wolf">Traitor</span></strong><p class="muted text-sm">You are a Villager who knows the Werewolves and wins with them. The Seer sees you as a Villager.</p></div>
             <div><strong>🦜 <span class="team-wolf">Mimic</span></strong><p class="muted text-sm">You win with the Werewolves. If a Seer exists, you receive their vision each night, causing confusion.</p></div>
             <div><strong>🤡 <span class="team-neutral">Jester</span></strong><p class="muted text-sm">You are a neutral role. Your goal is to get yourself eliminated by voting during the day. If you succeed, you win alone.</p></div>
-            <div><strong>🔥 <span class="team-neutral">Arsonist</span></strong><p class="muted text-sm">Neutral role. Each night, douse a player. Instead of dousing, you can ignite all doused players. Win by being the last one alive.</p></div>
+            <div><strong>🔥 <span class="team-neutral">Arsonist</span></strong><p class="muted text-sm">Neutral role. Each night, douse a player with gasoline. Instead of dousing, you can ignite all doused players. Win by being the last one alive.</p></div>
             <div><strong>🪓 <span class="team-neutral">Executioner</span></strong><p class="muted text-sm">Neutral role. You are assigned a Villager as a target. Win by convincing the town to eliminate them. If your target dies at night, you become a Jester.</p></div>
         </div>
         <div class="text-right mt-5">
@@ -369,58 +361,9 @@
       t.classList.add('show');
       setTimeout(()=> t.classList.remove('show'), 3000);
     }
-    
-    // --- Modal Queue System ---
-    let modalQueue = [];
-    let isModalActive = false;
-
-    function queueModal(type, data = {}) {
-        modalQueue.push({ type, data });
-        processModalQueue();
-    }
-
-    function processModalQueue() {
-        if (isModalActive || modalQueue.length === 0) {
-            return;
-        }
-        isModalActive = true;
-        const nextModal = modalQueue.shift();
-
-        switch (nextModal.type) {
-            case 'phase':
-                playPhaseTransition(nextModal.data.phase, nextModal.data.turn);
-                break;
-            case 'role':
-                renderRoleReveal(nextModal.data.roomData, nextModal.data.oldState);
-                break;
-            case 'event':
-                renderAnnouncement(nextModal.data.roomData, nextModal.data.oldState);
-                break;
-            case 'game_over':
-                renderGameOver(nextModal.data.roomData);
-                break;
-            case 'seer_result':
-                showModal('seer-result-modal', true);
-                break;
-            case 'rules':
-                showModal('rules-modal-backdrop', true);
-                break;
-        }
-    }
-
-    function onModalClosed() {
-        isModalActive = false;
-        processModalQueue();
-    }
-    
     window.showModal = (id, show) => {
         document.getElementById(id)?.classList.toggle('active', show);
-        if (!show) {
-            // Use a timeout to ensure the closing animation completes before processing the next modal
-            setTimeout(onModalClosed, 300); 
-        }
     }
-
 
     let auth, db;
     // NOTE: This is a public Firebase config. No sensitive data is stored here.
@@ -652,10 +595,10 @@
 
         switch(roomData.state) {
             case 'lobby': setActiveScreen('lobby-screen'); renderLobbyView(roomData); break;
-            case 'role_reveal': queueModal('role', { roomData, oldState }); break;
+            case 'role_reveal': renderRoleReveal(roomData, oldState); break;
             case 'night': case 'day': renderGamePhase(roomData, oldState); break;
-            case 'announcement': queueModal('event', { roomData, oldState }); break;
-            case 'game_over': queueModal('game_over', { roomData }); break;
+            case 'announcement': renderAnnouncement(roomData, oldState); break;
+            case 'game_over': renderGameOver(roomData); break;
         }
       }, err => {
         console.error("Room subscription error:", err);
@@ -853,7 +796,7 @@
             };
             if (nextPhase === 'night') {
                 Object.keys(players).forEach(pid => {
-                    if (players[pid].role === 'seer' || players[pid].role === 'arsonist') {
+                    if (players[pid].role === 'seer') {
                         updates[`players.${pid}.hasUsedAbilityThisTurn`] = false;
                     }
                 });
@@ -865,12 +808,20 @@
 
         if (state === 'day') {
             const alivePlayers = Object.values(players).filter(p => p.isAlive);
-            const mayorRevealed = alivePlayers.find(p => p.role === 'mayor' && p.isMayorRevealed);
             const allVoted = alivePlayers.every(p => p.votedFor);
-
-            if ((allVoted && alivePlayers.length > 0) || (mayorRevealed && mayorRevealed.votedFor)) {
-                 await updateDoc(roomRef, { phaseEndTime: serverTimestamp() });
-                 // Let the timer logic handle the transition to processing
+            if (allVoted && alivePlayers.length > 0) {
+                 await updateDoc(roomRef, { processing: true });
+                 const nextStateData = processDayVotes(roomData);
+                 if (nextStateData.state === 'game_over') {
+                     await updateDoc(roomRef, { ...nextStateData, processing: false });
+                     return;
+                 }
+                 const ANNOUNCEMENT_DURATION_MS = 12000;
+                 await updateDoc(roomRef, { 
+                     ...nextStateData, 
+                     announcementEndTime: Timestamp.fromMillis(Date.now() + ANNOUNCEMENT_DURATION_MS),
+                     processing: false 
+                 });
                  return;
             }
         }
@@ -919,8 +870,8 @@
                 }
             } else {
                 jailedPlayerId = targetId;
-                events.push(`**${getDisplayName(updatedPlayers[jailedPlayerId])}** has been hauled off to jail!`);
             }
+            events.push(`**${getDisplayName(updatedPlayers[jailedPlayerId])}** has been hauled off to jail!`);
         }
 
         const arsonist = Object.entries(updatedPlayers).find(([pid, p]) => p.isAlive && p.role === 'arsonist' && p.actionTarget === '__IGNITE__');
@@ -1018,31 +969,19 @@
         const revealRole = settings.revealRoleOnDeath ?? true;
         let wildChildChanged = false;
 
-        const revealedMayor = Object.values(updatedPlayers).find(p => p.isAlive && p.role === 'mayor' && p.isMayorRevealed && p.votedFor);
-        
-        if (revealedMayor) {
-            const targetId = revealedMayor.votedFor;
-            if (targetId !== '__SKIP__') {
-                votes[targetId] = 999; // Absolute vote
-                voteDetails[targetId] = [getDisplayName(revealedMayor) + ' (Mayor)'];
-            } else {
-                skipVotes = 999;
-            }
-        } else {
-            Object.entries(updatedPlayers).forEach(([voterId, p]) => {
-                if (p.isAlive && p.votedFor) {
-                    const targetId = p.votedFor;
-                    if (targetId === '__SKIP__') {
-                        skipVotes += 1;
-                        return;
-                    }
-                    votes[targetId] = (votes[targetId] || 0) + 1;
-                    if (!voteDetails[targetId]) voteDetails[targetId] = [];
-                    voteDetails[targetId].push(getDisplayName(p));
+        Object.entries(updatedPlayers).forEach(([voterId, p]) => {
+            if (p.isAlive && p.votedFor) {
+                const targetId = p.votedFor;
+                const voteWeight = (p.role === 'mayor' && p.isMayorRevealed) ? 2 : 1;
+                if (targetId === '__SKIP__') {
+                    skipVotes += voteWeight;
+                    return;
                 }
-            });
-        }
-
+                votes[targetId] = (votes[targetId] || 0) + voteWeight;
+                if (!voteDetails[targetId]) voteDetails[targetId] = [];
+                voteDetails[targetId].push(getDisplayName(p) + (voteWeight > 1 ? ' (x2)' : ''));
+            }
+        });
 
         let eliminatedPlayerId = null;
         if (Object.keys(votes).length > 0) {
@@ -1085,7 +1024,7 @@
             Object.entries(updatedPlayers).forEach(([p_id, p_data]) => {
                 if (p_data.role === 'executioner' && p_data.targetId === eliminatedPlayerId) {
                     updatedPlayers[p_id].missionComplete = true;
-                    // Note: Executioner win is checked in the main win condition check
+                    events.push(`**${getDisplayName(p_data)}** the Executioner has completed their goal!`);
                 }
                 if (p_data.role === 'wildChild' && p_data.roleModel === eliminatedPlayerId) {
                     updatedPlayers[p_id].role = 'werewolf';
@@ -1113,13 +1052,8 @@
 
     function checkWinCondition(players) {
         const alivePlayers = Object.values(players).filter(p => p.isAlive);
-        if (alivePlayers.length === 0) return { winningTeam: "Nobody", reason: "Everyone died!", players };
+        if (alivePlayers.length === 0) return null;
         
-        const executionerWinner = Object.values(players).find(p => p.role === 'executioner' && p.missionComplete);
-        if(executionerWinner) {
-             return { winningTeam: "Executioner", reason: `The Executioner, **${getDisplayName(executionerWinner)}**, successfully got their target eliminated!`, players };
-        }
-
         const aliveArsonist = alivePlayers.find(p => p.role === 'arsonist');
         if (aliveArsonist && alivePlayers.length === 1) {
             return { winningTeam: "Arsonist", reason: "Only the Arsonist remains!", players };
@@ -1127,9 +1061,9 @@
 
         const wolfTeamRoles = ['werewolf', 'traitor', 'mimic'];
         const aliveWolfTeam = alivePlayers.filter(p => wolfTeamRoles.includes(p.role));
-        const aliveNonWolfTeam = alivePlayers.filter(p => !wolfTeamRoles.includes(p.role) && p.role !== 'arsonist');
+        const aliveNonWolfTeam = alivePlayers.filter(p => !wolfTeamRoles.includes(p.role));
 
-        if (aliveWolfTeam.length === 0 && aliveNonWolfTeam.length > 0) {
+        if (aliveWolfTeam.length === 0 && alivePlayers.some(p => !wolfTeamRoles.includes(p.role) && p.role !== 'arsonist')) {
              return { winningTeam: "Villagers", reason: "All werewolves have been eliminated!", players };
         }
         if (aliveWolfTeam.length >= aliveNonWolfTeam.length) {
@@ -1153,37 +1087,55 @@
                 const villagerTeamRoles = ['villager', 'seer', 'doctor', 'hunter', 'mayor', 'jailer', 'wildChild'];
                 
                 let rolesToAssign = [];
-                if (settings.includeSeer) rolesToAssign.push('seer');
-                if (settings.includeDoctor) rolesToAssign.push('doctor');
-                if (settings.includeHunter) rolesToAssign.push('hunter');
-                if (settings.includeMayor) rolesToAssign.push('mayor');
-                if (settings.includeJailer) rolesToAssign.push('jailer');
-                if (settings.includeWildChild) rolesToAssign.push('wildChild');
-                if (settings.includeTraitor) rolesToAssign.push('traitor');
-                if (settings.includeMimic) rolesToAssign.push('mimic');
-                if (settings.includeJester) rolesToAssign.push('jester');
-                if (settings.includeArsonist) rolesToAssign.push('arsonist');
-                if (settings.includeExecutioner) rolesToAssign.push('executioner');
-                
-                for (let i = 0; i < settings.numWerewolves; i++) {
-                    rolesToAssign.push('werewolf');
-                }
+                let isBalanced = false;
+                let attempts = 0;
 
-                if (rolesToAssign.length > playerIds.length) {
-                    throw new Error("Too many special roles for the number of players.");
-                }
+                do {
+                    // Langkah 1: Kosongkan "tumpukan kartu" peran untuk setiap percobaan pengacakan.
+                    rolesToAssign = [];
 
-                while (rolesToAssign.length < playerIds.length) {
-                    rolesToAssign.push('villager');
-                }
-                
-                rolesToAssign.sort(() => Math.random() - 0.5);
+                    // Langkah 2: Prioritaskan dan masukkan semua peran spesial yang aktif di pengaturan.
+                    // Ini memastikan semua peran dengan aksi (Seer, Doctor, dll.) dijamin ada dalam permainan.
+                    if (settings.includeSeer) rolesToAssign.push('seer');
+                    if (settings.includeDoctor) rolesToAssign.push('doctor');
+                    if (settings.includeHunter) rolesToAssign.push('hunter');
+                    if (settings.includeMayor) rolesToAssign.push('mayor');
+                    if (settings.includeJailer) rolesToAssign.push('jailer');
+                    if (settings.includeWildChild) rolesToAssign.push('wildChild');
+                    if (settings.includeTraitor) rolesToAssign.push('traitor');
+                    if (settings.includeMimic) rolesToAssign.push('mimic');
+                    if (settings.includeJester) rolesToAssign.push('jester');
+                    if (settings.includeArsonist) rolesToAssign.push('arsonist');
+                    if (settings.includeExecutioner) rolesToAssign.push('executioner');
+                    
+                    // Langkah 3: Masukkan peran jahat (Werewolf).
+                    for (let i = 0; i < settings.numWerewolves; i++) {
+                        rolesToAssign.push('werewolf');
+                    }
 
-                const wolfCount = rolesToAssign.filter(r => wolfTeamRoles.includes(r)).length;
-                const nonWolfCount = rolesToAssign.length - wolfCount;
-                
-                if (wolfCount >= nonWolfCount) {
-                    throw new Error("Game is unbalanced. Too many werewolves for the number of players.");
+                    // Langkah 4: Peran "Villager" digunakan sebagai pengisi.
+                    // Jika masih ada slot kosong setelah semua peran spesial dimasukkan,
+                    // sisa slot tersebut akan diisi oleh Villager. Ini sesuai permintaan Anda.
+                    while (rolesToAssign.length < playerIds.length) {
+                        rolesToAssign.push('villager');
+                    }
+                    
+                    // Langkah 5: Acak seluruh "tumpukan kartu" peran secara menyeluruh.
+                    // Ini penting untuk keadilan, agar setiap pemain memiliki kesempatan yang sama
+                    // untuk mendapatkan peran apa pun, baik spesial maupun Villager.
+                    rolesToAssign.sort(() => Math.random() - 0.5);
+
+                    // Langkah 6 (Pemeriksaan Keseimbangan): Pastikan faksi jahat tidak langsung menang.
+                    const wolfCount = rolesToAssign.filter(r => wolfTeamRoles.includes(r)).length;
+                    const nonWolfCount = rolesToAssign.length - wolfCount;
+                    
+                    isBalanced = wolfCount < nonWolfCount;
+                    attempts++;
+
+                } while (!isBalanced && attempts < 20);
+
+                if (!isBalanced) {
+                    throw new Error("Could not create a balanced game. Please adjust role settings.");
                 }
 
                 const updatedPlayers = { ...roomData.players };
@@ -1216,11 +1168,8 @@
 
                 const executionerId = playerIds.find(pid => updatedPlayers[pid].role === 'executioner');
                 if (executionerId && villagerTeamIdsForTarget.length > 0) {
-                    const potentialTargets = villagerTeamIdsForTarget.filter(id => id !== executionerId);
-                    if (potentialTargets.length > 0) {
-                        const targetId = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
-                        updatedPlayers[executionerId].targetId = targetId;
-                    }
+                    const targetId = villagerTeamIdsForTarget[Math.floor(Math.random() * villagerTeamIdsForTarget.length)];
+                    updatedPlayers[executionerId].targetId = targetId;
                 }
 
                 if (settings.includeAlphaWolf && wolfIds.length > 0) {
@@ -1252,7 +1201,7 @@
     
     function renderRoleReveal(roomData, oldState) {
         setActiveScreen('game-screen');
-        showOverlay('role-reveal-overlay', true);
+        showOverlay('role-reveal-overlay');
         
         if (oldState !== 'role_reveal') {
             const card = document.querySelector('#role-reveal-overlay .card');
@@ -1268,8 +1217,8 @@
             doctor: { emoji: '🧑‍⚕️', desc: 'Each night, you may choose one player to protect from attack.' },
             hunter: { emoji: '👮', desc: 'You have one bullet. At night, you can choose to shoot a player you think is a werewolf.' },
             villager: { emoji: '👱', desc: 'Work with your fellow villagers to find and eliminate the werewolves.' },
-            mayor: { emoji: '🎖️', desc: 'Your vote is absolute. You can reveal your role during the day to single-handedly decide the vote.' },
-            jailer: { emoji: '🗝️', desc: 'At night, if your jail is empty, you can imprison a player. You can privately interrogate and execute them once.' },
+            mayor: { emoji: '🎖️', desc: 'Your vote counts as two. You can reveal your role during the day.' },
+            jailer: { emoji: '🗝️', desc: 'Each night, imprison a player. You can privately interrogate and execute them once.' },
             wildChild: { emoji: '🧒', desc: 'On the first night, choose a role model. If they die, you become a werewolf.' },
             traitor: { emoji: '🎭', desc: 'You are a villager who wins with the werewolves. Deceive everyone.' },
             mimic: { emoji: '🦜', desc: 'You win with the werewolves. If a Seer exists, you will receive their visions.' },
@@ -1304,33 +1253,6 @@
                 alliesDiv.innerHTML = `<p class="muted">Your target is: <strong class="team-villager">${targetName}</strong>. Convince the village to eliminate them.</p>`;
             }
         }
-        
-        // Timer logic
-        const timerEl = document.getElementById('role-reveal-timer');
-        const endTime = roomData.announcementEndTime.toMillis();
-
-        if (window.roleRevealTimerInterval) clearInterval(window.roleRevealTimerInterval);
-
-        const updateTimer = () => {
-            const remainingSeconds = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-            timerEl.textContent = `Game starts in ${remainingSeconds}...`;
-            if (remainingSeconds <= 0) {
-                clearInterval(window.roleRevealTimerInterval);
-            }
-        };
-
-        updateTimer();
-        window.roleRevealTimerInterval = setInterval(updateTimer, 1000);
-
-        // Self-closing mechanism
-        const remainingTime = Math.max(0, endTime - Date.now());
-        setTimeout(() => {
-            showOverlay('role-reveal-overlay', false);
-            onModalClosed();
-            if (window.roleRevealTimerInterval) {
-                clearInterval(window.roleRevealTimerInterval);
-            }
-        }, remainingTime);
     }
 
     function renderAnnouncement(roomData, oldState) {
@@ -1365,7 +1287,7 @@
         document.body.classList.toggle('night-phase-bg', isNight);
 
         if(oldState !== roomData.state && oldState !== 'role_reveal' && oldState !== 'announcement') {
-            queueModal('phase', { phase: roomData.state, turn: roomData.turn });
+            playPhaseTransition(roomData.state, roomData.turn);
         }
         renderGamePlayerList(roomData);
         renderPlayerCards(roomData);
@@ -1375,8 +1297,7 @@
         document.getElementById('game-phase-subtitle').textContent = isNight ? "Make your move..." : "Discuss and vote!";
         
         const skipVoteBtn = document.getElementById('skip-vote-btn');
-        const mayorRevealed = Object.values(roomData.players).some(p => p.isAlive && p.role === 'mayor' && p.isMayorRevealed);
-        skipVoteBtn.classList.toggle('hidden', isNight || !myData.isAlive || mayorRevealed);
+        skipVoteBtn.classList.toggle('hidden', isNight || !myData.isAlive);
         if (myData.votedFor === '__SKIP__') {
             skipVoteBtn.textContent = 'Cancel Skip';
         } else {
@@ -1384,8 +1305,7 @@
         }
 
         document.getElementById('reveal-mayor-btn').classList.toggle('hidden', isNight || !myData.isAlive || myData.role !== 'mayor' || myData.isMayorRevealed);
-        const dousedPlayersCount = Object.values(roomData.players).filter(p => p.isDoused).length;
-        document.getElementById('ignite-btn').classList.toggle('hidden', !isNight || !myData.isAlive || myData.role !== 'arsonist' || dousedPlayersCount === 0 || myData.hasUsedAbilityThisTurn);
+        document.getElementById('ignite-btn').classList.toggle('hidden', !isNight || !myData.isAlive || myData.role !== 'arsonist');
 
         const chatInput = document.getElementById('chat-input');
         const chatSend = document.getElementById('chat-send');
@@ -1407,7 +1327,6 @@
         mainContent.innerHTML = '';
         const myData = roomData.players[currentUser.uid];
         const devActions = roomData.devActions || {};
-        const mayorRevealed = Object.values(roomData.players).some(p => p.isAlive && p.role === 'mayor' && p.isMayorRevealed);
 
         playerOrder.forEach(pid => {
             const p = roomData.players[pid];
@@ -1435,48 +1354,48 @@
             const devActionsContainer = card.querySelector('.dev-actions-container');
             const playerActionsContainer = card.querySelector('.player-actions-container');
             
-            if (isProcessingPhase || roomData.jailedPlayerId === pid) {
-                // No actions for jailed players
+            if (isProcessingPhase || (roomData.jailedPlayerId && (isMe || myData.role === 'jailer'))) {
+                // No actions
             } else if (roomData.state === 'night') {
-                const actionButton = (title, icon, action, targetId) => `<button title="${title}" class="p-1 text-2xl" onclick="${action}('${targetId}')">${icon}</button>`;
-                
-                // Developer gets their actions AND their role's actions
                 if (currentUser.isDeveloper) {
                     if (p.isAlive && !isMe) {
-                        devActionsContainer.innerHTML += actionButton('Kill', '🔪', 'performDevAction', pid);
-                        devActionsContainer.innerHTML += actionButton('Protect', '🛡️', 'performDevAction', pid);
+                        devActionsContainer.innerHTML += `<button title="Kill" class="p-1" onclick="performDevAction('${pid}', 'kill')">🔪</button>`;
+                        devActionsContainer.innerHTML += `<button title="Protect" class="p-1" onclick="performDevAction('${pid}', 'protect')">🛡️</button>`;
                     }
-                    devActionsContainer.innerHTML += actionButton('See Role', '👁️', 'performDevAction', pid);
+                    devActionsContainer.innerHTML += `<button title="See Role" class="p-1" onclick="performDevAction('${pid}', 'seer')">👁️</button>`;
                     if (!p.isAlive) {
-                        devActionsContainer.innerHTML += actionButton('Revive', '💖', 'performDevAction', pid);
+                        devActionsContainer.innerHTML += `<button title="Revive" class="p-1" onclick="performDevAction('${pid}', 'revive')">💖</button>`;
                     }
                 } 
                 
-                if (p.isAlive && myData.isAlive && !myData.actionTarget) {
-                    const hasKillAction = myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility);
-                    const hasSeeAction = myData.role === 'seer';
-
-                    if (hasKillAction && !(currentUser.isDeveloper)) {
+                if (p.isAlive && myData.isAlive && !currentUser.isDeveloper && !myData.actionTarget) {
+                    const actionButton = (title, icon, action, targetId) => `<button title="${title}" class="p-1 text-2xl" onclick="${action}('${targetId}')">${icon}</button>`;
+                    if (myData.role === 'werewolf' || (myData.role === 'hunter' && !myData.hasUsedAbility)) {
                         if (!isMe) playerActionsContainer.innerHTML += actionButton('Kill/Shoot', '🔪', 'performNightAction', pid);
                     }
-                    if (hasSeeAction && !currentUser.isDeveloper) {
+                    if (myData.role === 'seer' && !myData.hasUsedAbilityThisTurn) {
                         if (!isMe) playerActionsContainer.innerHTML += actionButton('See Role', '👁️', 'performNightAction', pid);
                     }
-                    if (myData.role === 'doctor' && !(currentUser.isDeveloper)) {
+                    if (myData.role === 'doctor') {
                         playerActionsContainer.innerHTML += actionButton('Protect', '🛡️', 'performNightAction', pid);
                     }
                     if (myData.role === 'wildChild' && roomData.turn === 1 && !myData.roleModel) {
                         if (!isMe) playerActionsContainer.innerHTML += actionButton('Choose Model', '🎯', 'selectRoleModel', pid);
                     }
-                    if (myData.role === 'arsonist' && !myData.hasUsedAbilityThisTurn) {
+                    if (myData.role === 'arsonist') {
                         if (!isMe && !p.isDoused) playerActionsContainer.innerHTML += actionButton('Douse', '⛽', 'performNightAction', pid);
                     }
-                    if (myData.role === 'jailer' && !roomData.jailedPlayerId) {
-                        if (!isMe) playerActionsContainer.innerHTML += actionButton('Jail', '🗝️', 'performNightAction', pid);
+                    if (myData.role === 'jailer') {
+                        if (!isMe) {
+                             playerActionsContainer.innerHTML += actionButton('Jail', '🗝️', 'performNightAction', pid);
+                             if(myData.executionsLeft > 0) {
+                                playerActionsContainer.innerHTML += actionButton('Execute', '⚖️', 'performNightAction', `execute_${pid}`);
+                             }
+                        }
                     }
                 }
             } else if (roomData.state === 'day' && myData.isAlive && p.isAlive) {
-                 if (!isMe && myData.votedFor !== '__SKIP__' && (!mayorRevealed || myData.role === 'mayor')) {
+                 if (!isMe && myData.votedFor !== '__SKIP__') {
                     playerActionsContainer.innerHTML += `<button class="btn btn-primary px-3 py-1 text-xs" onclick="voteForPlayer('${pid}')">${myData.votedFor === pid ? 'Cancel' : 'Vote'}</button>`;
                  }
             }
@@ -1518,15 +1437,15 @@
             
             let roleIndicator = '';
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱', mayor: '🎖️', jailer: '🗝️', wildChild: '🧒', traitor: '🎭', mimic: '🦜', jester: '🤡', arsonist: '🔥', executioner: '🪓'};
-            if (p.isAlpha) roleEmojis.werewolf = '�👑';
+            if (p.isAlpha) roleEmojis.werewolf = '🐺👑';
 
             if (currentUser.isDeveloper || isMe || (!p.isAlive && (myData.role === 'werewolf' || myData.role === 'mimic') && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
             }
             
             let nickHTML = `<span class="font-bold">${displayName}</span>`;
-            if (p.isMayorRevealed) nickHTML += ' 🎖️';
             if (p.isDeveloper) nickHTML += ` <span class="shimmer-tag ml-2">Developer</span>`;
+            if (p.isMayorRevealed) nickHTML += ' 🎖️';
             
             const voteIndicator = (roomData.state === 'day' && p.isAlive && p.votedFor) ? '✅' : '';
 
@@ -1544,12 +1463,19 @@
         const teamColorClass = teamColors[winningTeam] || '';
         const title = `<span class="${teamColorClass}">${winningTeam} Win!</span>`;
         
-        const body = `<p>${reason}</p><h4 class='mt-4'>Final Roles:</h4>` + 
+        let additionalWinners = '';
+        Object.values(players).forEach(p => {
+            if (p.role === 'executioner' && p.missionComplete) {
+                additionalWinners += `<p class="team-neutral">**${getDisplayName(p)}** the Executioner also wins!</p>`;
+            }
+        });
+
+        const body = `<p>${reason}</p>${additionalWinners}<h4 class='mt-4'>Final Roles:</h4>` + 
             playerOrder.map(pid => {
                 const p = players[pid];
                 if (!p) return '';
                 const displayName = getDisplayName(p);
-                let roleName = p.role.charAt(0).toUpperCase() + p.role.slice(1);
+                let roleName = p.role;
                 if (p.isAlpha) roleName = 'Alpha Wolf';
                 if (p.role === 'wildChild') roleName = 'Wild Child';
 
@@ -1585,16 +1511,12 @@
         if (myData.role === 'arsonist') {
             if (targetId === '__IGNITE__') {
                 showToast('Ignition scheduled!');
-                return await updateDoc(roomRef, { 
-                    [`players.${currentUser.uid}.actionTarget`]: '__IGNITE__',
-                    [`players.${currentUser.uid}.hasUsedAbilityThisTurn`]: true,
-                });
+                return await updateDoc(roomRef, { [`players.${currentUser.uid}.actionTarget`]: '__IGNITE__' });
             } else {
                 showToast(`Doused ${getDisplayName(localGameState.players[targetId])}.`);
                 return await updateDoc(roomRef, { 
                     [`players.${targetId}.isDoused`]: true,
-                    [`players.${currentUser.uid}.actionTarget`]: targetId,
-                    [`players.${currentUser.uid}.hasUsedAbilityThisTurn`]: true,
+                    [`players.${currentUser.uid}.actionTarget`]: targetId 
                 });
             }
         }
@@ -1611,10 +1533,11 @@
 
         if (myData.role === 'seer') {
             const targetPlayer = localGameState.players[targetId];
-            const isWolfTeam = (targetPlayer.role === 'werewolf' && !targetPlayer.isAlpha) || targetPlayer.role === 'mimic';
+            const wolfTeamRoles = ['werewolf', 'traitor', 'mimic'];
+            const isWolfTeam = wolfTeamRoles.includes(targetPlayer.role) && !targetPlayer.isAlpha;
             
             document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)} is ${isWolfTeam ? 'a Werewolf' : 'not a Werewolf'}.`;
-            queueModal('seer_result');
+            showModal('seer-result-modal', true);
             showToast('Vision received.');
             updates[`players.${currentUser.uid}.hasUsedAbilityThisTurn`] = true;
 
@@ -1662,7 +1585,7 @@
         if (actionType === 'seer') {
             const targetPlayer = localGameState.players[targetId];
             document.getElementById('seer-result-body').textContent = `${getDisplayName(targetPlayer)} is a ${targetPlayer.role}.`;
-            return queueModal('seer_result');
+            return showModal('seer-result-modal', true);
         }
     }
 
@@ -1716,18 +1639,13 @@
     }
 
     function renderJailChat(roomData) {
-        const { jailerId, jailedPlayerId, jailChatMessages = [], players } = roomData;
+        const { jailerId, jailedPlayerId, jailChatMessages = [] } = roomData;
         const messagesDiv = document.getElementById('jail-chat-messages');
         const titleEl = document.getElementById('jail-chat-title');
-        const jailerActionsDiv = document.getElementById('jailer-actions');
-        const jailer = players[jailerId];
         
         const otherPlayerId = currentUser.uid === jailerId ? jailedPlayerId : jailerId;
         const otherPlayerName = getDisplayName(roomData.players[otherPlayerId]);
         titleEl.textContent = `Interrogating ${otherPlayerName}`;
-        
-        jailerActionsDiv.classList.toggle('hidden', currentUser.uid !== jailerId || !jailer.isAlive);
-        document.getElementById('jailer-execute-btn').disabled = jailer.executionsLeft <= 0;
         
         messagesDiv.innerHTML = '';
         jailChatMessages.forEach(msg => {
@@ -1790,10 +1708,7 @@
             title.textContent = `Night ${turn}`;
         }
         overlay.classList.add('visible');
-        setTimeout(() => {
-            overlay.classList.remove('visible');
-            onModalClosed();
-        }, 2000);
+        setTimeout(() => overlay.classList.remove('visible'), 2000);
     }
 
     function applyTheme(theme) {
@@ -1846,22 +1761,8 @@
         applyTheme(newTheme);
     });
 
-    document.getElementById('btn-how-to-play').addEventListener('click', () => queueModal('rules'));
+    document.getElementById('btn-how-to-play').addEventListener('click', () => showModal('rules-modal-backdrop', true));
     document.getElementById('btn-close-rules').addEventListener('click', () => showModal('rules-modal-backdrop', false));
-    
-    // Jailer Modal Buttons
-    document.getElementById('jail-close-btn').addEventListener('click', () => showModal('jail-chat-modal', false));
-    document.getElementById('jailer-execute-btn').addEventListener('click', () => {
-        const jailedPlayerId = localGameState.jailedPlayerId;
-        if (jailedPlayerId) {
-            performNightAction(`execute_${jailedPlayerId}`);
-            showModal('jail-chat-modal', false);
-        }
-    });
-    document.getElementById('jailer-release-btn').addEventListener('click', () => {
-        showToast("You will release the prisoner at dawn.");
-        showModal('jail-chat-modal', false);
-    });
 
     (function init(){
       const savedTheme = localStorage.getItem('whoswolf-theme') || 'dark';
