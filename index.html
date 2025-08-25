@@ -280,6 +280,7 @@
         <h1 id="role-reveal-name" class="text-3xl m-0"></h1>
         <p id="role-reveal-description" class="muted mt-2"></p>
         <div id="role-reveal-allies" class="mt-4"></div>
+        <p id="role-reveal-timer" class="muted mt-4"></p>
       </div>
   </div>
   
@@ -1251,7 +1252,7 @@
     
     function renderRoleReveal(roomData, oldState) {
         setActiveScreen('game-screen');
-        showOverlay('role-reveal-overlay');
+        showOverlay('role-reveal-overlay', true);
         
         if (oldState !== 'role_reveal') {
             const card = document.querySelector('#role-reveal-overlay .card');
@@ -1303,6 +1304,33 @@
                 alliesDiv.innerHTML = `<p class="muted">Your target is: <strong class="team-villager">${targetName}</strong>. Convince the village to eliminate them.</p>`;
             }
         }
+        
+        // Timer logic
+        const timerEl = document.getElementById('role-reveal-timer');
+        const endTime = roomData.announcementEndTime.toMillis();
+
+        if (window.roleRevealTimerInterval) clearInterval(window.roleRevealTimerInterval);
+
+        const updateTimer = () => {
+            const remainingSeconds = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+            timerEl.textContent = `Game starts in ${remainingSeconds}...`;
+            if (remainingSeconds <= 0) {
+                clearInterval(window.roleRevealTimerInterval);
+            }
+        };
+
+        updateTimer();
+        window.roleRevealTimerInterval = setInterval(updateTimer, 1000);
+
+        // Self-closing mechanism
+        const remainingTime = Math.max(0, endTime - Date.now());
+        setTimeout(() => {
+            showOverlay('role-reveal-overlay', false);
+            onModalClosed();
+            if (window.roleRevealTimerInterval) {
+                clearInterval(window.roleRevealTimerInterval);
+            }
+        }, remainingTime);
     }
 
     function renderAnnouncement(roomData, oldState) {
@@ -1490,7 +1518,7 @@
             
             let roleIndicator = '';
             const roleEmojis = {werewolf:'🐺', seer:'👁️', doctor:'🧑‍⚕️', hunter: '👮', villager:'👱', mayor: '🎖️', jailer: '🗝️', wildChild: '🧒', traitor: '🎭', mimic: '🦜', jester: '🤡', arsonist: '🔥', executioner: '🪓'};
-            if (p.isAlpha) roleEmojis.werewolf = '🐺👑';
+            if (p.isAlpha) roleEmojis.werewolf = '�👑';
 
             if (currentUser.isDeveloper || isMe || (!p.isAlive && (myData.role === 'werewolf' || myData.role === 'mimic') && p.role === 'werewolf')) {
                 roleIndicator = roleEmojis[p.role];
@@ -1758,7 +1786,7 @@
             title.textContent = `Day ${turn}`;
         } else {
             overlay.className = 'night';
-            icon.textContent = '�';
+            icon.textContent = '🌙';
             title.textContent = `Night ${turn}`;
         }
         overlay.classList.add('visible');
